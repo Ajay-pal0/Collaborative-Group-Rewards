@@ -203,7 +203,7 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in config(
-        'FRONTEND_URL',
+        'CORS_ALLOWED_ORIGINS',
         default='http://localhost:5173'
     ).split(',')
     if origin.strip()
