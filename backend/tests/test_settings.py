@@ -2,7 +2,7 @@
 Test-only settings — overrides the PostgreSQL DB with an in-memory SQLite
 database so tests run in milliseconds without any Docker/network overhead.
 """
-from backends.config.settings import *  # noqa: F401, F403
+from config.settings import *  # noqa: F401, F403
 
 DATABASES = {
     'default': {
