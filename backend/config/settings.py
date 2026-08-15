@@ -1,19 +1,36 @@
-import os
-from pathlib import Path
 import dj_database_url
 from decouple import config
 from datetime import timedelta
+from pathlib import Path
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-secret-key-change-in-production-xyz123')
-DEBUG = config('DEBUG', default=True, cast=bool)
+
+
+# SECURITY
+SECRET_KEY = config(
+    'SECRET_KEY',
+    default='django-insecure-dev-secret-key-change-in-production'
+)
+
+DEBUG = config(
+    'DEBUG',
+    default=True,
+    cast=bool
+)
+
 ALLOWED_HOSTS = [
     host.strip()
-    for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1,*').split(',')
+    for host in config(
+        'ALLOWED_HOSTS',
+        default='localhost,127.0.0.1'
+    ).split(',')
     if host.strip()
 ]
 
+
+# INSTALLED APPS
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -21,9 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Third-party
     'rest_framework',
     'corsheaders',
+
     # Local apps
     'apps.users',
     'apps.groups',
@@ -31,6 +50,8 @@ INSTALLED_APPS = [
     'apps.activities',
 ]
 
+
+# MIDDLEWARE
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -42,8 +63,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'config.urls'
 
+# URL / TEMPLATES
+ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -54,7 +76,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                'django.contrib.auth.context_processors.messages',
             ],
         },
     },
@@ -62,7 +84,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASE_URL = config('DATABASE_URL', default=None)
+
+# DATABASE
+DATABASE_URL = config(
+    'DATABASE_URL',
+    default=None
+)
 
 if DATABASE_URL:
     DATABASES = {
@@ -72,47 +99,90 @@ if DATABASE_URL:
             ssl_require=True,
         )
     }
+
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='group_rewards'),
-            'USER': config('DB_USER', default='postgres'),
-            'PASSWORD': config('DB_PASSWORD', default='postgres'),
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', default='5432'),
+            'NAME': config(
+                'DB_NAME',
+                default='group_rewards'
+            ),
+            'USER': config(
+                'DB_USER',
+                default='postgres'
+            ),
+            'PASSWORD': config(
+                'DB_PASSWORD',
+                default='postgres'
+            ),
+            'HOST': config(
+                'DB_HOST',
+                default='localhost'
+            ),
+            'PORT': config(
+                'DB_PORT',
+                default='5432'
+            ),
         }
     }
 
+
+# USER
 AUTH_USER_MODEL = 'users.User'
 
+
+# PASSWORD VALIDATION
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.'
+        'UserAttributeSimilarityValidator'
+    },
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.'
+        'MinimumLengthValidator'
+    },
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.'
+        'CommonPasswordValidator'
+    },
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.'
+        'NumericPasswordValidator'
+    },
 ]
 
+
+# INTERNATIONALIZATION
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# STATIC
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# REST Framework
+
+# REST FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
+
     'DEFAULT_THROTTLE_RATES': {
         'anon': '60/minute',
         'user': '300/minute',
@@ -128,6 +198,27 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
+
 # CORS
-CORS_ALLOWED_ORIGINS = config('FRONTEND_URL', default='http://localhost:5173').split(',')
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in config(
+        'FRONTEND_URL',
+        default='http://localhost:5173'
+    ).split(',')
+    if origin.strip()
+]
+
+
 CORS_ALLOW_CREDENTIALS = True
+
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config(
+        'CSRF_TRUSTED_ORIGINS',
+        default=''
+    ).split(',')
+    if origin.strip()
+]
