@@ -243,6 +243,8 @@ jobs:
           echo "Running production database migrations..."
 
           python manage.py migrate --noinput
+          
+          python manage.py seed_data
 
           echo "Production database migrations completed successfully."
 
