@@ -1,0 +1,80 @@
+name: CI Workflow - Collaborative Group Rewards
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  backend-test:
+    name: Backend Test Suite (Django + PostgreSQL)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: test_group_rewards
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django Tests
+        env:
+          SECRET_KEY: ci-test-secret-key
+          DEBUG: 'True'
+          DB_NAME: test_group_rewards
+          DB_USER: postgres
+          DB_PASSWORD: password
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: |
+          cd backend
+          python manage.py test backend/tests --noinput
+
+  frontend-test:
+    name: Frontend Test Suite (React + Vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Vitest Tests
+        run: |
+          cd frontend
+          npm test

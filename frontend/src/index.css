@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #635BFF;
+  --color-primary-dark: #4F46E5;
+  --color-reward-gold: #F5B942;
+  --color-page-bg: #F8F9FC;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F2F4F7;
+  --color-text-primary: #171923;
+  --color-text-secondary: #667085;
+  --color-text-muted: #98A2B3;
+  --color-border: #E7E9EE;
+  --color-success: #12B76A;
+  --color-warning: #F79009;
+  --color-error: #F04438;
+  --color-info: #2E90FA;
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--color-page-bg);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+  }
+}
+
+/* Custom UI Utility Classes matching Design Spec */
+.btn-primary {
+  background-color: #635BFF;
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: #4F46E5;
+  box-shadow: 0 4px 12px rgba(99, 91, 255, 0.25);
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: #171923;
+  border: 1px solid #E7E9EE;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-secondary:hover {
+  background-color: #F2F4F7;
+  border-color: #D0D5DD;
+}
+
+.card-surface {
+  background-color: #FFFFFF;
+  border: 1px solid #E7E9EE;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+}
+
+.card-surface-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-surface-hover:hover {
+  border-color: #635BFF;
+  box-shadow: 0 8px 20px -4px rgba(99, 91, 255, 0.12);
+}
+
+.reward-card-gold {
+  background: linear-gradient(135deg, #FFFDF5 0%, #FEF8E7 100%);
+  border: 1px solid #F5B942;
+  box-shadow: 0 4px 14px rgba(245, 185, 66, 0.18);
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2.5s infinite ease-in-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}

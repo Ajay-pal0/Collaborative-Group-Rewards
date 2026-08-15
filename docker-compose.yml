@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: together_postgres
+    environment:
+      POSTGRES_DB: together_db
+      POSTGRES_USER: together_user
+      POSTGRES_PASSWORD: together_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: together_backend
+    command: sh -c "python manage.py migrate && python manage.py seed_data && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=django-insecure-docker-secret-key
+      - DEBUG=True
+      - DB_NAME=together_db
+      - DB_USER=together_user
+      - DB_PASSWORD=together_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: together_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
