@@ -97,7 +97,7 @@ jobs:
           DB_PORT: 5432
 
         run: |
-          python manage.py test backend/tests --noinput
+          python manage.py test tests --noinput
 
 
   # ============================================================
