@@ -6,9 +6,10 @@ A full-stack, state-machine web application designed for group-level point aggre
 
 ## Overview
 
-**Collaborative Group Rewards** is a social reward platform where users form private groups (Friends, Family, Colleagues, Other) to complete personal actions and collectively accumulate points to unlock shared rewards and benefits. 
+**Collaborative Group Rewards** is a social reward platform where users form private groups (Friends, Family, Colleagues, Other) to complete personal actions and collectively accumulate points to unlock shared rewards and benefits.
 
 The core architectural paradigm is the **Collaborative Reward Model**:
+
 - **Task Completion is Personal**: Each member can complete a specific task once per group.
 - **Reward Accumulation is Shared**: Every completed task awards points directly to the group's aggregate total.
 - **Benefit Unlocking is Group-Wide & Claiming is Per-User**: When group total points reach defined thresholds (e.g., 200 pts, 500 pts, 1000 pts), benefits unlock for all group members, and every active member can claim unlocked benefits for themselves (claiming benefits does not add points to group total).
@@ -157,7 +158,7 @@ Point allocations are defined by `RewardRule` database records and executed via 
 **Explicit Definition**:
 > **Task completion is personal, while points are shared at the group level.**
 
-### Example Demonstration:
+### Example Demonstration
 
 1. **User A** completes Task A ("Security Audit"):
    - Task A status for User A becomes `COMPLETED`.
@@ -223,6 +224,7 @@ Benefits exist in three distinct state transitions based on the group's `total_p
 ## Activity Tracking
 
 Every key event in a group records an auditable `Activity` log entry:
+
 - `group_created`: Logged when group is initialized.
 - `invite_created`: Logged when invite link is generated.
 - `member_joined`: Logged when a new participant joins.
@@ -254,18 +256,22 @@ Every key event in a group records an auditable `Activity` log entry:
 ### Running Tests
 
 **Backend Test Suite**:
+
 ```bash
 cd backend
 source venv/bin/activate
 python manage.py test backend/tests --noinput
 ```
+
 *Executes 28 automated tests covering group creation, invitation lifecycle, collaborative reward logic, task idempotency, multi-threaded race conditions, profile completion, and IDOR authorization boundaries.*
 
 **Frontend Test Suite**:
+
 ```bash
 cd frontend
 npm test
 ```
+
 *Executes Vitest component and hook unit tests.*
 
 ---
@@ -273,17 +279,20 @@ npm test
 ## Local Setup
 
 ### Prerequisites
+
 - Python 3.11+
 - Node.js 18+ & pnpm / npm
 - PostgreSQL 15 (or Docker)
 
 ### Step 1: Clone Repository
+
 ```bash
 git clone <repo-url>
 cd Collaborative-Group-Rewards
 ```
 
 ### Step 2: Backend Setup
+
 ```bash
 cd backend
 python -m venv venv
@@ -295,11 +304,13 @@ python manage.py runserver
 ```
 
 ### Step 3: Frontend Setup
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 Navigate to `http://localhost:5173`.
 
 ---
@@ -307,6 +318,7 @@ Navigate to `http://localhost:5173`.
 ## Environment Variables
 
 ### Backend (`backend/.env`)
+
 ```env
 SECRET_KEY=your-django-secret-key-here
 DEBUG=True
@@ -320,6 +332,7 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 ### Frontend (`frontend/.env`)
+
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api
 ```
@@ -359,6 +372,7 @@ docker-compose up --build -d
 ## Future Improvements
 
 If granted one additional week of development, key focus areas would include:
+
 1. **Real-time Synchronization (WebSockets/SSE)**: Instant cross-tab and cross-device live updates without manual page refreshes.
 2. **E2E Integration Test Suite (Playwright)**: Full browser-level end-to-end automation testing across multi-user scenarios.
 3. **Redis Caching & Distributed Locks**: High-performance caching layer for `group.total_points` and distributed Redlock locks for multi-node deployments.
