@@ -2,6 +2,12 @@
 
 A full-stack, state-machine web application designed for group-level point aggregation, personal task completions, idempotent transaction processing, and atomic benefit milestone unlocks.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloudflare%20Pages-635BFF?style=for-the-badge&logo=cloudflare)](https://collaborative-group-rewards.pages.dev/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/Ajay-pal0/Collaborative-Group-Rewards)
+
+- 🌐 **Live Demo URL**: [https://collaborative-group-rewards.pages.dev/](https://collaborative-group-rewards.pages.dev/)
+- 💻 **GitHub Repository**: [https://github.com/Ajay-pal0/Collaborative-Group-Rewards](https://github.com/Ajay-pal0/Collaborative-Group-Rewards)
+
 ---
 
 ## Overview
