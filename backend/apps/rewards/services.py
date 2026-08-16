@@ -135,11 +135,26 @@ def claim_benefit(group, benefit, user):
             )
             membership = GroupMember.objects.filter(group=locked_group, user=user).first()
             if membership:
+                ref_id = f'{locked_group.id}:{user.id}:BENEFIT:{benefit.id}'
+                key = build_idempotency_key('BENEFIT_CLAIMED', ref_id)
+                PointTransaction.objects.get_or_create(
+                    group=locked_group,
+                    member=membership,
+                    action_type='BENEFIT_CLAIMED',
+                    defaults={
+                        'reference_id': ref_id,
+                        'points': benefit.required_points,
+                        'idempotency_key': key,
+                    }
+                )
                 record_activity(
                     group=locked_group,
                     member=membership,
                     event_type='benefit_claimed',
-                    metadata={'benefit_name': benefit.name},
+                    metadata={
+                        'benefit_name': benefit.name,
+                        'points': benefit.required_points,
+                    },
                 )
             return claim
     except IntegrityError:
