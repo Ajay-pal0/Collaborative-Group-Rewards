@@ -21,13 +21,14 @@ DEBUG = config(
 )
 
 ALLOWED_HOSTS = [
-    host.strip()
+    host.strip().replace('https://', '').replace('http://', '').rstrip('/').split('/')[0]
     for host in config(
         'ALLOWED_HOSTS',
         default='localhost,127.0.0.1,.vercel.app,.onrender.com'
     ).split(',')
     if host.strip()
 ]
+
 
 
 
@@ -93,39 +94,38 @@ DATABASE_URL = config(
     default=None
 )
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True,
-        )
-    }
-
-else:
+if DATABASE_URL and (DATABASE_URL.startswith('postgres://') or DATABASE_URL.startswith('postgresql://') or DATABASE_URL.startswith('sqlite://')):
+    try:
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=DATABASE_URL,
+                conn_max_age=600,
+                ssl_require=False if DEBUG else True,
+            )
+        }
+    except Exception:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+elif config('DB_HOST', default=None):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config(
-                'DB_NAME',
-                default='group_rewards'
-            ),
-            'USER': config(
-                'DB_USER',
-                default='postgres'
-            ),
-            'PASSWORD': config(
-                'DB_PASSWORD',
-                default='postgres'
-            ),
-            'HOST': config(
-                'DB_HOST',
-                default='localhost'
-            ),
-            'PORT': config(
-                'DB_PORT',
-                default='5432'
-            ),
+            'NAME': config('DB_NAME', default='group_rewards'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='postgres'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
