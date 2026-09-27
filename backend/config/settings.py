@@ -226,22 +226,10 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 # EXTERNAL INTEGRATIONS - SETU PAN VERIFICATION
-SETU_PAN_VERIFY_URL = config(
-    'SETU_PAN_VERIFY_URL',
-    default='https://dg-sandbox.setu.co/api/verify/pan'
-)
-SETU_CLIENT_ID = config(
-    'SETU_CLIENT_ID',
-    default='810bb42a-e09f-490a-838e-d9212a7966de'
-)
-SETU_CLIENT_SECRET = config(
-    'SETU_CLIENT_SECRET',
-    default='wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t'
-)
-SETU_PRODUCT_INSTANCE_ID = config(
-    'SETU_PRODUCT_INSTANCE_ID',
-    default='9578859d-c667-43f3-8712-c92df29998d9'
-)
+SETU_PAN_VERIFY_URL = 'https://dg-sandbox.setu.co/api/verify/pan'
+SETU_CLIENT_ID = '810bb42a-e09f-490a-838e-d9212a7966de'
+SETU_CLIENT_SECRET = 'wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t'
+SETU_PRODUCT_INSTANCE_ID = '9578859d-c667-43f3-8712-c92df29998d9'
 
 
 # LOGGING CONFIGURATION
