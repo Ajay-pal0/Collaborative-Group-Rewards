@@ -39,6 +39,15 @@ class SetuPanVerificationService:
         """
         clean_pan = str(pan).strip().upper()
 
+        logger.info(
+            "Initiating Setu PAN verification for PAN %s | URL: %s | Client ID configured: %s | Secret configured: %s | Instance ID configured: %s",
+            mask_pan(clean_pan),
+            self.verify_url,
+            bool(self.client_id),
+            bool(self.client_secret),
+            bool(self.product_instance_id),
+        )
+
         headers = {
             'Content-Type': 'application/json',
             'x-client-id': self.client_id,
@@ -63,6 +72,11 @@ class SetuPanVerificationService:
         )
 
         if response.is_timeout:
+            logger.warning(
+                "Setu PAN verification timed out for PAN %s after %sms",
+                mask_pan(clean_pan),
+                getattr(response, 'duration_ms', 0),
+            )
             return {
                 'success': False,
                 'is_timeout': True,
@@ -74,6 +88,7 @@ class SetuPanVerificationService:
         if not response.is_success or not isinstance(response.data, dict):
             # Parse provider failure message safely
             err_msg = 'Unable to verify PAN at this time. Please try again later.'
+            provider_msg = None
             if isinstance(response.data, dict):
                 provider_msg = response.data.get('message') or response.data.get('error')
                 if provider_msg:
@@ -82,12 +97,22 @@ class SetuPanVerificationService:
             # Map external provider status codes: NEVER return 401/403 to frontend client
             if response.status_code in (401, 403):
                 client_status = 502
-                err_msg = 'External PAN verification configuration error. Please verify Setu credentials.'
+                if provider_msg:
+                    err_msg = f'External PAN verification configuration error: {provider_msg}. Please verify SETU_CLIENT_ID, SETU_CLIENT_SECRET, and SETU_PRODUCT_INSTANCE_ID in your server environment.'
+                else:
+                    err_msg = 'External PAN verification configuration error. Please verify SETU_CLIENT_ID, SETU_CLIENT_SECRET, and SETU_PRODUCT_INSTANCE_ID in your server environment.'
             elif response.status_code and response.status_code >= 500:
                 client_status = 502
                 err_msg = 'External PAN verification service error. Please try again later.'
             else:
                 client_status = 400
+
+            logger.error(
+                "Setu PAN verification API rejected request for PAN %s: HTTP %s | provider_error='%s'",
+                mask_pan(clean_pan),
+                response.status_code,
+                provider_msg or response.data,
+            )
 
             return {
                 'success': False,
@@ -102,6 +127,12 @@ class SetuPanVerificationService:
 
         if verification_status != 'SUCCESS':
             failure_reason = res_data.get('message') or 'PAN verification was unsuccessful.'
+            logger.warning(
+                "Setu PAN verification non-SUCCESS for PAN %s: status='%s' reason='%s'",
+                mask_pan(clean_pan),
+                verification_status,
+                failure_reason,
+            )
             return {
                 'success': False,
                 'is_timeout': False,
@@ -120,6 +151,14 @@ class SetuPanVerificationService:
             ]))
             or ''
         ).strip()
+
+        logger.info(
+            "Setu PAN verification successful for PAN %s: Name='%s' ID='%s' Trace='%s'",
+            mask_pan(clean_pan),
+            full_name,
+            str(res_data.get('id', '')),
+            str(res_data.get('traceId', '')),
+        )
 
         return {
             'success': True,
@@ -170,6 +209,11 @@ def verify_user_pan(
         # Check if record exists and is verified
         pan_record = PanVerification.objects.select_for_update().filter(user=locked_user).first()
         if pan_record and pan_record.is_verified:
+            logger.info(
+                "Idempotent check: User %s already has verified PAN (%s), skipping external API call",
+                locked_user.email,
+                pan_record.pan_masked,
+            )
             return {
                 'success': True,
                 'message': 'PAN is already verified.',
@@ -183,10 +227,22 @@ def verify_user_pan(
                 'status_code': 200,
             }
 
+        logger.info(
+            "Calling Setu PAN service for user %s with PAN %s",
+            locked_user.email,
+            mask_pan(clean_pan),
+        )
+
         # Call Setu PAN API via the external integration layer
         result = pan_service.verify_pan(clean_pan)
 
         if not result['success']:
+            logger.warning(
+                "PAN verification rejected for user %s (%s): %s",
+                locked_user.email,
+                mask_pan(clean_pan),
+                result.get('error'),
+            )
             return {
                 'success': False,
                 'error': result.get('error', 'PAN verification failed.'),
@@ -206,6 +262,13 @@ def verify_user_pan(
         pan_record.category = result.get('category', '')
         pan_record.aadhaar_seeding_status = result.get('aadhaar_seeding_status', '')
         pan_record.save()
+
+        logger.info(
+            "PAN verification successfully persisted for user %s: %s (name: %s)",
+            locked_user.email,
+            pan_record.pan_masked,
+            pan_record.registered_name,
+        )
 
         return {
             'success': True,

@@ -70,6 +70,15 @@ class ExternalApiClient:
         trace_id = ''
         external_reference_id = ''
 
+        logger.info(
+            "External API Dispatch: [%s:%s] %s %s | payload=%s",
+            provider,
+            api_name,
+            http_method,
+            url,
+            sanitized_req_payload,
+        )
+
         try:
             resp = requests.request(
                 method=http_method,
@@ -129,6 +138,27 @@ class ExternalApiClient:
             end_mono = time.monotonic()
             response_timestamp = timezone.now()
             duration_ms = int((end_mono - start_mono) * 1000)
+
+            if is_success:
+                logger.info(
+                    "External API Success: [%s:%s] HTTP %s (%sms) | trace_id=%s | ref_id=%s",
+                    provider,
+                    api_name,
+                    response_status,
+                    duration_ms,
+                    trace_id or '-',
+                    external_reference_id or '-',
+                )
+            else:
+                logger.error(
+                    "External API Error: [%s:%s] HTTP %s (%sms) | error='%s' | response=%s",
+                    provider,
+                    api_name,
+                    response_status,
+                    duration_ms,
+                    error_message,
+                    sanitized_res_payload,
+                )
 
             # Persist audit record in database
             try:
