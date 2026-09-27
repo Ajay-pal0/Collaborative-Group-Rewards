@@ -23,15 +23,48 @@ class SetuPanVerificationService:
 
     def __init__(self, client: ExternalApiClient | None = None):
         self.client = client or ExternalApiClient(default_timeout=15)
-        self.verify_url = getattr(
+
+        # Setu PAN verification API credentials and configuration from Django settings
+        # These should be configured in .env for production and are hardcoded here for development.
+        verify_url=getattr(
             settings,
             'SETU_PAN_VERIFY_URL',
-            'https://dg-sandbox.setu.co/api/verify/pan'
+            None
         )
-        self.client_id = getattr(settings, 'SETU_CLIENT_ID', '810bb42a-e09f-490a-838e-d9212a7966de')
-        self.client_secret = getattr(settings, 'SETU_CLIENT_SECRET', 'wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t')
-        self.product_instance_id = getattr(settings, 'SETU_PRODUCT_INSTANCE_ID', '9578859d-c667-43f3-8712-c92df29998d9')
+        client_id=getattr(
+            settings,
+            'SETU_CLIENT_ID',
+            None
+        )
+        client_secret=getattr(
+            settings,
+            'SETU_CLIENT_SECRET',
+            None
+        )
+        product_instance_id=getattr(
+            settings,
+            'SETU_PRODUCT_INSTANCE_ID',
+            None
+        )
+        logger.info(
+            "Setu PAN verification API credentials and configuration from Django settings: %s | %s | %s | %s",
+            verify_url,
+            client_id,
+            client_secret,
+            product_instance_id,
+        )
+        self.verify_url = verify_url if verify_url else 'https://dg-sandbox.setu.co/api/verify/pan'
+        self.client_id = client_id if client_id else '810bb42a-e09f-490a-838e-d9212a7966de'
+        self.client_secret = client_secret if client_secret else 'wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t'
+        self.product_instance_id = product_instance_id if product_instance_id else '9578859d-c667-43f3-8712-c92df29998d9'
 
+        logger.info(
+            "sent for the constructor of Setu PAN verification API : %s | %s | %s | %s",
+            self.verify_url,
+            self.client_id,
+            self.client_secret,
+            self.product_instance_id,
+        )
     def verify_pan(self, pan: str, reason: str = 'Verification of user PAN for reward distribution') -> dict[str, Any]:
         """
         Executes external verification with Setu.
@@ -43,9 +76,9 @@ class SetuPanVerificationService:
             "Initiating Setu PAN verification for PAN %s | URL: %s | Client ID configured: %s | Secret configured: %s | Instance ID configured: %s",
             mask_pan(clean_pan),
             self.verify_url,
-            bool(self.client_id),
-            bool(self.client_secret),
-            bool(self.product_instance_id),
+            self.client_id,
+            self.client_secret,
+            self.product_instance_id,
         )
 
         headers = {
@@ -55,11 +88,21 @@ class SetuPanVerificationService:
             'x-product-instance-id': self.product_instance_id,
         }
 
+        logger.info(
+            "headers for the Setu PAN verification API: %s",
+            headers
+        )
+        
         payload = {
             'pan': clean_pan,
             'consent': 'Y',
             'reason': reason,
         }
+
+        logger.info(
+            "payload for the Setu PAN verification API: %s",
+            payload
+        )
 
         response = self.client.execute(
             provider=self.PROVIDER,
@@ -202,6 +245,10 @@ def verify_user_pan(
 
     pan_service = service or SetuPanVerificationService()
 
+    logger.info(
+        "pan_service: %s",
+        pan_service
+    )
     with transaction.atomic():
         # Lock user record to prevent concurrent duplicate verification requests
         locked_user = User.objects.select_for_update().get(id=user.id)
@@ -235,6 +282,10 @@ def verify_user_pan(
 
         # Call Setu PAN API via the external integration layer
         result = pan_service.verify_pan(clean_pan)
+        logger.info(
+            "result: %s",
+            result
+        )
 
         if not result['success']:
             logger.warning(
