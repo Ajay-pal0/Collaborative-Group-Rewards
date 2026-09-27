@@ -24,10 +24,11 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in config(
         'ALLOWED_HOSTS',
-        default='localhost,127.0.0.1'
+        default='localhost,127.0.0.1,.vercel.app,.onrender.com'
     ).split(',')
     if host.strip()
 ]
+
 
 
 # INSTALLED APPS
@@ -165,7 +166,8 @@ USE_I18N = True
 USE_TZ = True
 
 # STATIC
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
@@ -210,6 +212,10 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+    r"^https:\/\/.*\.pages\.dev$",
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -219,7 +225,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in config(
         'CSRF_TRUSTED_ORIGINS',
-        default=''
+        default='https://*.vercel.app,https://*.pages.dev'
     ).split(',')
     if origin.strip()
 ]
