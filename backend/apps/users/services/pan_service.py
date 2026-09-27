@@ -83,6 +83,8 @@ class SetuPanVerificationService:
 
         headers = {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 CollaborativeGroupRewards/1.0',
             'x-client-id': self.client_id,
             'x-client-secret': self.client_secret,
             'x-product-instance-id': self.product_instance_id,
@@ -138,12 +140,15 @@ class SetuPanVerificationService:
                     err_msg = str(provider_msg)
 
             # Map external provider status codes: NEVER return 401/403 to frontend client
-            if response.status_code in (401, 403):
+            if response.status_code == 401:
                 client_status = 502
                 if provider_msg:
                     err_msg = f'External PAN verification configuration error: {provider_msg}. Please verify SETU_CLIENT_ID, SETU_CLIENT_SECRET, and SETU_PRODUCT_INSTANCE_ID in your server environment.'
                 else:
                     err_msg = 'External PAN verification configuration error. Please verify SETU_CLIENT_ID, SETU_CLIENT_SECRET, and SETU_PRODUCT_INSTANCE_ID in your server environment.'
+            elif response.status_code == 403:
+                client_status = 502
+                err_msg = 'External PAN verification gateway is temporarily busy or rate-limiting requests (HTTP 403 from gateway). Please retry in a few moments.'
             elif response.status_code and response.status_code >= 500:
                 client_status = 502
                 err_msg = 'External PAN verification service error. Please try again later.'
