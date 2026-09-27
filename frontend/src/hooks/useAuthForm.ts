@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { authApi } from '../services/apiServices';
+import { authApi, panApi } from '../services/apiServices';
 import { extractErrorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { AuthResponse } from '../types';
@@ -12,15 +12,26 @@ export function useAuthForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { login } = useAuth();
+  const { login, updateUser, user } = useAuth();
 
   // Register state
+  const [registerStep, setRegisterStep] = useState<'credentials' | 'optional_pan'>('credentials');
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
+
+  // PAN verification during signup state
+  const [signupPan, setSignupPan] = useState('');
+  const [panLoading, setPanLoading] = useState(false);
+  const [panError, setPanError] = useState('');
+  const [panSuccess, setPanSuccess] = useState(false);
+  const [panVerifiedData, setPanVerifiedData] = useState<{
+    pan_masked: string;
+    name: string;
+  } | null>(null);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -65,7 +76,7 @@ export function useAuthForm() {
       });
       const data = res.data as unknown as AuthResponse;
       login(data.user, data.tokens);
-      navigate(redirect, { replace: true });
+      setRegisterStep('optional_pan');
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data) {
         const data = err.response.data as Record<string, unknown>;
@@ -80,6 +91,56 @@ export function useAuthForm() {
     } finally {
       setRegLoading(false);
     }
+  }
+
+  async function handleVerifySignupPan(e: React.FormEvent) {
+    e.preventDefault();
+    setPanError('');
+    const cleanPan = signupPan.trim().toUpperCase();
+    if (!cleanPan) {
+      setPanError('Please enter your PAN number.');
+      return;
+    }
+    const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!PAN_RE.test(cleanPan)) {
+      setPanError('Invalid PAN format. Format must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234A).');
+      return;
+    }
+
+    setPanLoading(true);
+    try {
+      const res = await panApi.verifyPan({ pan: cleanPan });
+      if (res.data.success) {
+        setPanSuccess(true);
+        setPanVerifiedData({
+          pan_masked: res.data.data.pan_masked,
+          name: res.data.data.name,
+        });
+        if (user) {
+          updateUser({
+            ...user,
+            pan_verified: true,
+            pan_masked: res.data.data.pan_masked,
+            pan_registered_name: res.data.data.name,
+            pan_verified_at: res.data.data.verified_at || undefined,
+          });
+        }
+      } else {
+        setPanError(res.data.error || res.data.message || 'PAN verification failed.');
+      }
+    } catch (err: unknown) {
+      setPanError(extractErrorMessage(err));
+    } finally {
+      setPanLoading(false);
+    }
+  }
+
+  function handleSkipSignupPan() {
+    navigate(redirect, { replace: true });
+  }
+
+  function handleCompleteSignup() {
+    navigate(redirect, { replace: true });
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -122,6 +183,18 @@ export function useAuthForm() {
     setRegErrors,
     regLoading,
     handleRegister,
+    registerStep,
+    setRegisterStep,
+    signupPan,
+    setSignupPan,
+    panLoading,
+    panError,
+    setPanError,
+    panSuccess,
+    panVerifiedData,
+    handleVerifySignupPan,
+    handleSkipSignupPan,
+    handleCompleteSignup,
     loginEmail,
     setLoginEmail,
     loginPassword,

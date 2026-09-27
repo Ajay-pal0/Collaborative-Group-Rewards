@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Local apps
+    'apps.common',
     'apps.users',
     'apps.groups',
     'apps.rewards',
@@ -222,3 +223,22 @@ CSRF_TRUSTED_ORIGINS = [
     ).split(',')
     if origin.strip()
 ]
+
+
+# EXTERNAL INTEGRATIONS - SETU PAN VERIFICATION
+SETU_PAN_VERIFY_URL = config(
+    'SETU_PAN_VERIFY_URL',
+    default='https://dg-sandbox.setu.co/api/verify/pan'
+)
+SETU_CLIENT_ID = config(
+    'SETU_CLIENT_ID',
+    default=''
+)
+SETU_CLIENT_SECRET = config(
+    'SETU_CLIENT_SECRET',
+    default=''
+)
+SETU_PRODUCT_INSTANCE_ID = config(
+    'SETU_PRODUCT_INSTANCE_ID',
+    default=''
+)

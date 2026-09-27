@@ -3,8 +3,35 @@ export interface User {
   email: string;
   name: string;
   phone: string;
+  pan_verified?: boolean;
+  pan_masked?: string;
+  pan_registered_name?: string;
+  pan_verified_at?: string;
   created_at?: string;
 }
+
+export interface PanVerificationData {
+  pan_verified: boolean;
+  pan_masked: string;
+  name: string;
+  verified_at: string | null;
+  already_verified?: boolean;
+}
+
+export interface PanVerificationResponse {
+  success: boolean;
+  message: string;
+  data: PanVerificationData;
+  error?: string;
+}
+
+export interface PanStatusResponse {
+  pan_verified: boolean;
+  pan_masked: string;
+  name: string;
+  verified_at: string | null;
+}
+
 
 export interface Group {
   id: string;

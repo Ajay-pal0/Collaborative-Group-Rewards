@@ -8,6 +8,8 @@ import type {
   UserPointsData,
   Invitation,
   User,
+  PanVerificationResponse,
+  PanStatusResponse,
 } from '../types';
 
 // Centralized Auth API Service
@@ -54,3 +56,12 @@ export const rewardsApi = {
   claimBenefit: (groupId: string, benefitId: string) =>
     api.post(`/groups/${groupId}/benefits/${benefitId}/claim/`),
 };
+
+// Centralized PAN Verification API Service
+export const panApi = {
+  verifyPan: (data: { pan: string }) =>
+    api.post<PanVerificationResponse>('/auth/pan/verify/', data),
+  getPanStatus: () =>
+    api.get<PanStatusResponse>('/auth/pan/status/'),
+};
+

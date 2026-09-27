@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-ssr
+__pycache__
+*.py[cod]
+.venv
+venv
+env
+.git
+.gitignore
+*.log
+.pytest_cache
+.coverage
+htmlcov
+*.sqlite3
+db.sqlite3

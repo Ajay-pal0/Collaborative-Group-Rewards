@@ -30,9 +30,35 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    pan_masked = serializers.CharField(read_only=True)
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'phone', 'created_at')
+        fields = (
+            'id',
+            'email',
+            'name',
+            'phone',
+            'pan_verified',
+            'pan_masked',
+            'pan_registered_name',
+            'pan_verified_at',
+            'created_at',
+        )
+
+
+class PanVerifySerializer(serializers.Serializer):
+    pan = serializers.CharField(max_length=10, min_length=10)
+
+    def validate_pan(self, value):
+        from apps.common.security import validate_pan_format
+        clean = value.strip().upper()
+        if not validate_pan_format(clean):
+            raise serializers.ValidationError(
+                'Invalid PAN format. Expected format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234A).'
+            )
+        return clean
+
 
 
 def get_tokens_for_user(user):

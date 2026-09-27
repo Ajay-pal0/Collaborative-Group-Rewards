@@ -338,6 +338,14 @@ class ProfileCompletionTest(TestCase):
     def setUp(self):
         seed_rules()
         self.user = make_user()
+        from apps.users.models import PanVerification
+        PanVerification.objects.create(
+            user=self.user,
+            pan_number='ABCDE1234A',
+            is_verified=True,
+            registered_name='Group Member',
+            verified_at=timezone.now(),
+        )
         self.group = create_group(self.user, 'Profile Group', 'other')
 
     def test_profile_completion_awards_50_points(self):
@@ -354,6 +362,25 @@ class ProfileCompletionTest(TestCase):
         complete_profile(self.group, membership)
         with self.assertRaises(ValueError):
             complete_profile(self.group, membership)
+
+    def test_profile_completion_fails_if_unverified(self):
+        unverified_user = make_user('unverified@example.com', 'Unverified User')
+        from apps.groups.models import GroupMember
+        unverified_member = GroupMember.objects.create(
+            group=self.group, user=unverified_user, role='member', status='active'
+        )
+        from apps.rewards.services import complete_profile
+        with self.assertRaises(ValueError) as ctx:
+            complete_profile(self.group, unverified_member)
+        self.assertIn('Profile Completion Bonus can only be added once user is Verified', str(ctx.exception))
+
+        client = APIClient()
+        client.force_authenticate(user=unverified_user)
+        resp = client.post(f'/api/groups/{self.group.id}/profile/complete/', {
+            'phone': '+1234567890'
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Profile Completion Bonus can only be added once user is Verified', resp.data['detail'])
 
     def test_profile_complete_api_endpoint(self):
         client = APIClient()

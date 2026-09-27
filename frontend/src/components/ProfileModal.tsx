@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import Modal from './Modal';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useProfileCompletion } from '../hooks/useProfileCompletion';
+import { panApi } from '../services/apiServices';
+import { extractErrorMessage } from '../lib/api';
 import {
   User as UserIcon,
   Phone,
@@ -12,6 +15,8 @@ import {
   Activity as ActivityIcon,
   Clock,
   Gift,
+  ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import type { UserPointsData, Activity } from '../types';
 
@@ -50,8 +55,55 @@ export default function ProfileModal({
   activities = [],
   onSuccess,
 }: ProfileModalProps) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
+
+  // PAN Verification state
+  const [profilePanInput, setProfilePanInput] = useState('');
+  const [profilePanLoading, setProfilePanLoading] = useState(false);
+  const [profilePanError, setProfilePanError] = useState('');
+  const [profilePanSuccess, setProfilePanSuccess] = useState('');
+
+  async function handleVerifyProfilePan(e: React.FormEvent) {
+    e.preventDefault();
+    setProfilePanError('');
+    setProfilePanSuccess('');
+    const cleanPan = profilePanInput.trim().toUpperCase();
+    if (!cleanPan) {
+      setProfilePanError('Please enter your 10-character PAN.');
+      return;
+    }
+    const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!PAN_RE.test(cleanPan)) {
+      setProfilePanError('Invalid PAN format (e.g. ABCDE1234A).');
+      return;
+    }
+
+    setProfilePanLoading(true);
+    try {
+      const res = await panApi.verifyPan({ pan: cleanPan });
+      if (res.data.success) {
+        setProfilePanSuccess('PAN verified successfully!');
+        showToast('PAN verified successfully! 🛡️', 'success');
+        if (user) {
+          updateUser({
+            ...user,
+            pan_verified: true,
+            pan_masked: res.data.data.pan_masked,
+            pan_registered_name: res.data.data.name,
+            pan_verified_at: res.data.data.verified_at || undefined,
+          });
+        }
+      } else {
+        setProfilePanError(res.data.error || res.data.message || 'PAN verification failed.');
+      }
+    } catch (err: unknown) {
+      setProfilePanError(extractErrorMessage(err));
+    } finally {
+      setProfilePanLoading(false);
+    }
+  }
 
   const {
     name,
@@ -98,6 +150,15 @@ export default function ProfileModal({
                 <span className="text-[9px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 px-2 py-0.5 rounded-full">
                   You
                 </span>
+                {user?.pan_verified ? (
+                  <span className="text-[9px] font-extrabold text-[#12B76A] bg-[#ECFDF3] border border-[#12B76A]/30 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    ✓ PAN Verified
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-semibold text-[#667085] bg-[#F2F4F7] px-2 py-0.5 rounded-full">
+                    PAN Unverified
+                  </span>
+                )}
               </h3>
               <p className="text-[11px] text-[#667085]">{user?.email}</p>
             </div>
@@ -271,19 +332,146 @@ export default function ProfileModal({
               </div>
             )}
 
+            {/* PAN Verification Section (Req 11 & 12) */}
+            <div className={`rounded-2xl p-4 border transition-all ${
+              user?.pan_verified
+                ? 'bg-[#ECFDF3]/50 border-[#12B76A]/30'
+                : 'bg-[#F8F9FC] border-[#E7E9EE]'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                    user?.pan_verified ? 'bg-[#12B76A]/10 text-[#12B76A]' : 'bg-[#635BFF]/10 text-[#635BFF]'
+                  }`}>
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-xs text-[#171923]">PAN Verification</h4>
+                    <p className="text-[11px] text-[#667085]">
+                      {user?.pan_verified ? 'Identity verified via official registry' : 'Your PAN is not verified.'}
+                    </p>
+                  </div>
+                </div>
+                {user?.pan_verified ? (
+                  <span className="text-[10px] font-extrabold text-[#12B76A] bg-white border border-[#12B76A]/30 px-2.5 py-1 rounded-full shadow-2xs flex items-center gap-1">
+                    ✓ PAN Verified
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-[#667085] bg-white border border-[#E7E9EE] px-2.5 py-1 rounded-full">
+                    Unverified
+                  </span>
+                )}
+              </div>
+
+              {user?.pan_verified ? (
+                /* Verified View */
+                <div className="bg-white/80 border border-[#12B76A]/20 rounded-xl p-3 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#667085] text-[11px] font-medium">PAN:</span>
+                    <span className="font-mono font-bold text-[#171923] tracking-wider">{user.pan_masked || 'Verified'}</span>
+                  </div>
+                  {user.pan_registered_name && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#667085] text-[11px] font-medium">Name:</span>
+                      <span className="font-bold text-[#171923]">{user.pan_registered_name}</span>
+                    </div>
+                  )}
+                  {user.pan_verified_at && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#667085] text-[11px] font-medium">Verified on:</span>
+                      <span className="text-[#667085] font-medium">
+                        {new Date(user.pan_verified_at).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Unverified Form */
+                <div className="space-y-3 pt-1">
+                  {profilePanError && (
+                    <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-2.5 rounded-xl font-medium">
+                      {profilePanError}
+                    </p>
+                  )}
+                  {profilePanSuccess && (
+                    <p className="text-[#12B76A] text-xs bg-[#12B76A]/10 p-2.5 rounded-xl font-medium flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" /> {profilePanSuccess}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={profilePanInput}
+                      onChange={(e) => {
+                        setProfilePanInput(e.target.value.toUpperCase());
+                        if (profilePanError) setProfilePanError('');
+                      }}
+                      placeholder="ABCDE1234A"
+                      maxLength={10}
+                      className="flex-1 bg-white border border-[#E7E9EE] focus:border-[#635BFF] rounded-xl px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyProfilePan}
+                      disabled={profilePanLoading || !profilePanInput.trim()}
+                      className="bg-[#635BFF] hover:bg-[#4F46E5] disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 shrink-0"
+                    >
+                      {profilePanLoading ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        'Verify PAN'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Reward Banner */}
-            <div className="bg-gradient-to-r from-[#5C4EFE]/10 to-[#635BFF]/10 border border-[#635BFF]/30 rounded-2xl p-4 flex items-center justify-between">
+            <div className={`border rounded-2xl p-4 flex items-center justify-between transition-all ${
+              user?.pan_verified
+                ? 'bg-gradient-to-r from-[#5C4EFE]/10 to-[#635BFF]/10 border-[#635BFF]/30'
+                : 'bg-[#FFF9F5] border-[#F79009]/40'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#635BFF] text-white flex items-center justify-center font-bold">
-                  <Sparkles className="w-5 h-5 fill-white/20" />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
+                  user?.pan_verified ? 'bg-[#635BFF] text-white' : 'bg-[#F79009] text-white shadow-2xs'
+                }`}>
+                  {user?.pan_verified ? (
+                    <Sparkles className="w-5 h-5 fill-white/20" />
+                  ) : (
+                    <Lock className="w-5 h-5" />
+                  )}
                 </div>
                 <div>
-                  <h4 className="font-bold text-xs text-[#171923]">Profile Completion Bonus</h4>
-                  <p className="text-[11px] text-[#667085]">Complete details to earn group points</p>
+                  <h4 className="font-bold text-xs text-[#171923] flex items-center gap-1.5">
+                    Profile Completion Bonus
+                    {!user?.pan_verified && (
+                      <span className="text-[10px] font-extrabold text-[#B54708] bg-[#FFFAEB] border border-[#FEDF89] px-2 py-0.5 rounded-full">
+                        Locked
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-[#667085]">
+                    {user?.pan_verified
+                      ? 'Complete details to earn group points'
+                      : 'PAN verification required. Verify your PAN above to unlock this bonus.'}
+                  </p>
                 </div>
               </div>
-              <span className="text-xs font-extrabold text-[#635BFF] bg-white border border-[#635BFF]/30 px-3 py-1 rounded-full shadow-xs">
-                +50 pts
+              <span className={`text-xs font-extrabold px-3 py-1 rounded-full shadow-xs ${
+                user?.pan_verified
+                  ? 'text-[#635BFF] bg-white border border-[#635BFF]/30'
+                  : 'text-[#B54708] bg-[#FFFAEB] border border-[#FEDF89]'
+              }`}>
+                {user?.pan_verified ? '+50 pts' : 'Locked (+50 pts)'}
               </span>
             </div>
 
@@ -327,6 +515,15 @@ export default function ProfileModal({
               />
             </div>
 
+            {!user?.pan_verified && (
+              <div className="bg-[#FFFAEB] border border-[#FEDF89] text-[#B54708] px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-2 font-medium">
+                <Lock className="w-4 h-4 shrink-0 text-[#F79009]" />
+                <span>
+                  Profile Completion Bonus can only be added once your PAN is verified. Please verify your PAN above.
+                </span>
+              </div>
+            )}
+
             <div className="pt-3 flex justify-end gap-3 border-t border-[#E7E9EE]">
               <button
                 type="button"
@@ -337,8 +534,9 @@ export default function ProfileModal({
               </button>
               <button
                 type="submit"
-                disabled={loading || Boolean(successMsg)}
-                className="bg-[#635BFF] hover:bg-[#4F46E5] disabled:opacity-50 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                disabled={loading || Boolean(successMsg) || !user?.pan_verified}
+                className="bg-[#635BFF] hover:bg-[#4F46E5] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                title={!user?.pan_verified ? 'Please verify your PAN to claim this bonus' : ''}
               >
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

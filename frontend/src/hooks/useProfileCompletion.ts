@@ -23,6 +23,10 @@ export function useProfileCompletion(
       setError('Please select a group first.');
       return;
     }
+    if (!user?.pan_verified) {
+      setError('Profile Completion Bonus can only be added once user is Verified. Please verify your PAN first.');
+      return;
+    }
     setError('');
     setLoading(true);
 

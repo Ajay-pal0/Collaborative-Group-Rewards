@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -9,9 +7,14 @@ services:
       POSTGRES_USER: together_user
       POSTGRES_PASSWORD: together_password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U together_user -d together_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   backend:
     build: ./backend
@@ -30,8 +33,13 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - FRONTEND_URL=http://localhost:5173
+      - SETU_PAN_VERIFY_URL=${SETU_PAN_VERIFY_URL:-https://dg-sandbox.setu.co/api/verify/pan}
+      - SETU_CLIENT_ID=${SETU_CLIENT_ID:-}
+      - SETU_CLIENT_SECRET=${SETU_CLIENT_SECRET:-}
+      - SETU_PRODUCT_INSTANCE_ID=${SETU_PRODUCT_INSTANCE_ID:-}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend

@@ -164,6 +164,12 @@ class ProfileCompleteView(APIView):
         if not membership:
             return Response({'detail': 'You are not a member of this group.'}, status=status.HTTP_403_FORBIDDEN)
 
+        if not getattr(request.user, 'pan_verified', False):
+            return Response(
+                {'detail': 'Profile Completion Bonus can only be added once user is Verified. Please verify your PAN first.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         name = request.data.get('name')
         phone = request.data.get('phone')
         updated = False

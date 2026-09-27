@@ -167,7 +167,11 @@ def complete_profile(group, member):
     """
     Awards PROFILE_COMPLETED points for a member in a group.
     Idempotent by member + group context.
+    Profile Completion Bonus can only be added once user is Verified.
     """
+    if not getattr(member.user, 'pan_verified', False):
+        raise ValueError('Profile Completion Bonus can only be added once user is Verified. Please verify your PAN first.')
+
     reference_id = f'{group.id}:{member.user_id}:PROFILE'
     key = build_idempotency_key('PROFILE_COMPLETED', reference_id)
 
