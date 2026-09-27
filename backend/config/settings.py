@@ -232,15 +232,15 @@ SETU_PAN_VERIFY_URL = config(
 )
 SETU_CLIENT_ID = config(
     'SETU_CLIENT_ID',
-    default=''
+    default='810bb42a-e09f-490a-838e-d9212a7966de'
 )
 SETU_CLIENT_SECRET = config(
     'SETU_CLIENT_SECRET',
-    default=''
+    default='wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t'
 )
 SETU_PRODUCT_INSTANCE_ID = config(
     'SETU_PRODUCT_INSTANCE_ID',
-    default=''
+    default='9578859d-c667-43f3-8712-c92df29998d9'
 )
 
 
