@@ -28,9 +28,9 @@ class SetuPanVerificationService:
             'SETU_PAN_VERIFY_URL',
             'https://dg-sandbox.setu.co/api/verify/pan'
         )
-        self.client_id = getattr(settings, 'SETU_CLIENT_ID', '')
-        self.client_secret = getattr(settings, 'SETU_CLIENT_SECRET', '')
-        self.product_instance_id = getattr(settings, 'SETU_PRODUCT_INSTANCE_ID', '')
+        self.client_id = getattr(settings, 'SETU_CLIENT_ID', '810bb42a-e09f-490a-838e-d9212a7966de')
+        self.client_secret = getattr(settings, 'SETU_CLIENT_SECRET', 'wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t')
+        self.product_instance_id = getattr(settings, 'SETU_PRODUCT_INSTANCE_ID', '9578859d-c667-43f3-8712-c92df29998d9')
 
     def verify_pan(self, pan: str, reason: str = 'Verification of user PAN for reward distribution') -> dict[str, Any]:
         """
