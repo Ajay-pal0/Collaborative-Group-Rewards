@@ -44,7 +44,7 @@ export default function OnboardingPage() {
     forgotError,
     setForgotError,
     forgotSuccess,
-    forgotResetUrl,
+    // forgotResetUrl,
     forgotLoading,
     handleForgotPassword,
     handleBackToLogin,
@@ -126,9 +126,8 @@ export default function OnboardingPage() {
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    mode === m ? 'bg-white shadow-xs text-[#635BFF]' : 'text-[#667085] hover:text-[#171923]'
-                  }`}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${mode === m ? 'bg-white shadow-xs text-[#635BFF]' : 'text-[#667085] hover:text-[#171923]'
+                    }`}
                 >
                   {m === 'login' ? 'Sign In' : 'Create Account'}
                 </button>
@@ -149,9 +148,8 @@ export default function OnboardingPage() {
                     onChange={(e) => { setRegName(e.target.value); setRegErrors((p) => ({ ...p, name: '' })); }}
                     placeholder="Ajay Pal"
                     maxLength={255}
-                    className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-                      regErrors.name ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-                    }`}
+                    className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${regErrors.name ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                      }`}
                   />
                   {regErrors.name && <p className="text-[#F04438] text-xs mt-1 font-medium">{regErrors.name}</p>}
                 </div>
@@ -162,9 +160,8 @@ export default function OnboardingPage() {
                     value={regEmail}
                     onChange={(e) => { setRegEmail(e.target.value); setRegErrors((p) => ({ ...p, email: '' })); }}
                     placeholder="ajay.pal@example.com"
-                    className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-                      regErrors.email ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-                    }`}
+                    className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${regErrors.email ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                      }`}
                   />
                   {regErrors.email && <p className="text-[#F04438] text-xs mt-1 font-medium">{regErrors.email}</p>}
                 </div>
@@ -176,9 +173,8 @@ export default function OnboardingPage() {
                       value={regPassword}
                       onChange={(e) => { setRegPassword(e.target.value); setRegErrors((p) => ({ ...p, password: '' })); }}
                       placeholder="Min. 6 characters"
-                      className={`w-full bg-[#F8F9FC] border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-                        regErrors.password ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-                      }`}
+                      className={`w-full bg-[#F8F9FC] border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${regErrors.password ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                        }`}
                     />
                     <button
                       type="button"
@@ -305,9 +301,8 @@ export default function OnboardingPage() {
                     maxLength={254}
                     onChange={(e) => { setLoginEmail(e.target.value); setLoginFieldErrors((p) => ({ ...p, email: '' })); }}
                     placeholder="ajay.pal@example.com"
-                    className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-                      loginFieldErrors.email ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-                    }`}
+                    className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${loginFieldErrors.email ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                      }`}
                   />
                   {loginFieldErrors.email && <p className="text-[#F04438] text-xs mt-1 font-medium">{loginFieldErrors.email}</p>}
                 </div>
@@ -333,9 +328,8 @@ export default function OnboardingPage() {
                       maxLength={128}
                       onChange={(e) => { setLoginPassword(e.target.value); setLoginFieldErrors((p) => ({ ...p, password: '' })); }}
                       placeholder="••••••••"
-                      className={`w-full bg-[#F8F9FC] border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-                        loginFieldErrors.password ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-                      }`}
+                      className={`w-full bg-[#F8F9FC] border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${loginFieldErrors.password ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                        }`}
                     />
                     <button
                       type="button"
@@ -393,9 +387,8 @@ export default function OnboardingPage() {
                           if (forgotError) setForgotError('');
                         }}
                         placeholder="ajay.pal@example.com"
-                        className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-                          forgotError ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-                        }`}
+                        className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${forgotError ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                          }`}
                       />
                     </div>
 
@@ -441,7 +434,8 @@ export default function OnboardingPage() {
                       </div>
                     </div>
 
-                    {forgotResetUrl && (
+                    {/* Dev / Sandbox Link (commented out) */}
+                    {/* {forgotResetUrl && (
                       <div className="bg-[#F8F9FC] border border-[#635BFF]/30 rounded-2xl p-4 text-left space-y-2">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#635BFF] bg-[#635BFF]/10 px-2 py-0.5 rounded">
@@ -458,7 +452,7 @@ export default function OnboardingPage() {
                           {forgotResetUrl}
                         </a>
                       </div>
-                    )}
+                    )} */}
 
                     <button
                       type="button"
