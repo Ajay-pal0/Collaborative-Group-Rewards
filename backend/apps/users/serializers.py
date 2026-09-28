@@ -60,6 +60,34 @@ class PanVerifySerializer(serializers.Serializer):
         return clean
 
 
+class CheckEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        clean = value.strip().lower()
+        if not User.objects.filter(email__iexact=clean).exists():
+            raise serializers.ValidationError('No account found with this email address.')
+        return clean
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=6)
+    confirm_password = serializers.CharField(write_only=True, min_length=6)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+        return data
+
+
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)

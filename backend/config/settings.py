@@ -238,6 +238,12 @@ SETU_CLIENT_SECRET = 'wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t'
 SETU_PRODUCT_INSTANCE_ID = '9578859d-c667-43f3-8712-c92df29998d9'
 
 
+# EMAIL CONFIGURATION & PASSWORD RESET
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Collaborative Group Rewards <noreply@group-rewards.app>')
+FRONTEND_URL = config('FRONTEND_URL', default='https://collaborative-group-rewards.vercel.app').rstrip('/')
+
+
 # LOGGING CONFIGURATION
 LOGGING = {
     'version': 1,

@@ -19,6 +19,12 @@ export const authApi = {
     api.post<{ access: string; refresh: string }>('/auth/login/', data),
   register: (data: { email: string; password: string; name?: string }) =>
     api.post<{ access: string; refresh: string }>('/auth/register/', data),
+  forgotPassword: (data: { email: string }) =>
+    api.post<{ message: string; reset_url?: string }>('/auth/forgot-password/', data),
+  resetPassword: (data: { token: string; new_password: string; confirm_password: string }) =>
+    api.post<{ message: string; success?: boolean }>('/auth/reset-password/', data),
+  checkEmailExists: (data: { email: string }) =>
+    api.post<{ detail: string; exists: boolean; email: string }>('/auth/password-reset/check-email/', data),
 };
 
 // Centralized Groups API Service

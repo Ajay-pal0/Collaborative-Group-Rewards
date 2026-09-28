@@ -9,7 +9,7 @@ import type { AuthResponse } from '../types';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function useAuthForm() {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { login, updateUser, user } = useAuth();
@@ -40,6 +40,13 @@ export function useAuthForm() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginFieldErrors, setLoginFieldErrors] = useState<Record<string, string>>({});
+
+  // Forgot Password state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotResetUrl, setForgotResetUrl] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const redirect = params.get('redirect') || '/groups';
 
@@ -168,6 +175,44 @@ export function useAuthForm() {
     }
   }
 
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+    setForgotResetUrl('');
+    const cleanEmail = forgotEmail.trim();
+    if (!cleanEmail) {
+      setForgotError('Email address is required.');
+      return;
+    }
+    if (!EMAIL_RE.test(cleanEmail)) {
+      setForgotError('Enter a valid email address.');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await authApi.forgotPassword({ email: cleanEmail });
+      setForgotSuccess(
+        res.data.message || 'If an account exists for this email, a password reset link has been sent.'
+      );
+      if (res.data.reset_url) {
+        setForgotResetUrl(res.data.reset_url);
+      }
+    } catch (err: unknown) {
+      setForgotError(extractErrorMessage(err));
+    } finally {
+      setForgotLoading(false);
+    }
+  }
+
+  function handleBackToLogin() {
+    setMode('login');
+    setForgotError('');
+    setForgotSuccess('');
+    setForgotResetUrl('');
+  }
+
   return {
     mode,
     setMode,
@@ -206,6 +251,16 @@ export function useAuthForm() {
     loginFieldErrors,
     setLoginFieldErrors,
     handleLogin,
+    forgotEmail,
+    setForgotEmail,
+    forgotError,
+    setForgotError,
+    forgotSuccess,
+    setForgotSuccess,
+    forgotResetUrl,
+    forgotLoading,
+    handleForgotPassword,
+    handleBackToLogin,
     navigate,
   };
 }

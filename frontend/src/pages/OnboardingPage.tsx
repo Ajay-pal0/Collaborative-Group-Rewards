@@ -1,5 +1,5 @@
 import { useAuthForm } from '../hooks/useAuthForm';
-import { Sparkles, ArrowRight, CheckCircle2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2, Eye, EyeOff, ShieldCheck, KeyRound } from 'lucide-react';
 
 export default function OnboardingPage() {
   const {
@@ -39,6 +39,15 @@ export default function OnboardingPage() {
     loginFieldErrors,
     setLoginFieldErrors,
     handleLogin,
+    forgotEmail,
+    setForgotEmail,
+    forgotError,
+    setForgotError,
+    forgotSuccess,
+    forgotResetUrl,
+    forgotLoading,
+    handleForgotPassword,
+    handleBackToLogin,
     navigate,
   } = useAuthForm();
 
@@ -303,7 +312,20 @@ export default function OnboardingPage() {
                   {loginFieldErrors.email && <p className="text-[#F04438] text-xs mt-1 font-medium">{loginFieldErrors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider mb-1.5">Password</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider">Password</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (loginEmail) setForgotEmail(loginEmail);
+                        setMode('forgot');
+                        setForgotError('');
+                      }}
+                      className="text-xs font-semibold text-[#635BFF] hover:underline cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <div className="relative">
                     <input
                       type={showLoginPassword ? 'text' : 'password'}
@@ -336,6 +358,118 @@ export default function OnboardingPage() {
                   ) : 'Sign In'}
                 </button>
               </form>
+            )}
+
+            {/* FORGOT PASSWORD FLOW */}
+            {mode === 'forgot' && (
+              <div className="space-y-4">
+                <div className="text-center space-y-1">
+                  <div className="w-10 h-10 rounded-2xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mx-auto mb-1.5">
+                    <KeyRound className="w-5 h-5 text-[#635BFF]" />
+                  </div>
+                  <h3 className="text-base font-extrabold text-[#171923]">
+                    {forgotSuccess ? 'Check Your Inbox' : 'Forgot Password'}
+                  </h3>
+                  <p className="text-xs text-[#667085]">
+                    {forgotSuccess
+                      ? 'A password reset link has been dispatched.'
+                      : 'Enter your registered email address to receive a secure reset link.'}
+                  </p>
+                </div>
+
+                {!forgotSuccess ? (
+                  <form onSubmit={handleForgotPassword} noValidate className="space-y-4">
+                    {forgotError && (
+                      <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-3 rounded-xl font-semibold">{forgotError}</p>
+                    )}
+                    <div>
+                      <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider mb-1.5">Registered Email</label>
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        maxLength={254}
+                        onChange={(e) => {
+                          setForgotEmail(e.target.value);
+                          if (forgotError) setForgotError('');
+                        }}
+                        placeholder="ajay.pal@example.com"
+                        className={`w-full bg-[#F8F9FC] border rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
+                          forgotError ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+                        }`}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      className="w-full bg-[#635BFF] hover:bg-[#4F46E5] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {forgotLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Sending reset link...
+                        </>
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </button>
+
+                    <div className="pt-2 text-center border-t border-[#E7E9EE]">
+                      <button
+                        type="button"
+                        onClick={handleBackToLogin}
+                        className="text-xs font-semibold text-[#635BFF] hover:underline cursor-pointer"
+                      >
+                        ← Back to Sign In
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-[#ECFDF3] border border-[#12B76A]/30 rounded-2xl p-5 text-center space-y-3">
+                      <div className="w-10 h-10 rounded-full bg-[#12B76A]/20 text-[#12B76A] flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-6 h-6 text-[#12B76A]" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-sm text-[#027A48]">Password Reset Email Sent</h4>
+                        <p className="text-xs text-[#667085] mt-1.5 leading-relaxed">
+                          {forgotSuccess}
+                        </p>
+                        <p className="text-[11px] text-[#98A2B3] mt-2">
+                          The reset link is valid for <strong>20 minutes</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {forgotResetUrl && (
+                      <div className="bg-[#F8F9FC] border border-[#635BFF]/30 rounded-2xl p-4 text-left space-y-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#635BFF] bg-[#635BFF]/10 px-2 py-0.5 rounded">
+                            Dev / Sandbox Link
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#667085]">
+                          Direct reset link generated for instant testing:
+                        </p>
+                        <a
+                          href={forgotResetUrl}
+                          className="text-xs font-semibold text-[#635BFF] hover:underline break-all block"
+                        >
+                          {forgotResetUrl}
+                        </a>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleBackToLogin}
+                      className="w-full bg-[#635BFF] hover:bg-[#4F46E5] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      Back to Sign In <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
