@@ -2,6 +2,7 @@ import hashlib
 import logging
 import secrets
 from datetime import timedelta
+from email.utils import parseaddr, formataddr
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
@@ -72,12 +73,17 @@ def send_password_reset_email(user: User, raw_token: str) -> str:
     </div>
     """
 
+    raw_from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@group-rewards.app')
+    cleaned_from = str(raw_from_email).strip().strip('\'"') if raw_from_email else 'noreply@group-rewards.app'
+    display_name, email_address = parseaddr(cleaned_from)
+    from_email = formataddr((display_name, email_address)) if (display_name and email_address) else (email_address or cleaned_from)
+
     try:
         send_mail(
             subject=subject,
             message=message_text,
             html_message=html_message,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@group-rewards.app'),
+            from_email=from_email,
             recipient_list=[user.email],
             fail_silently=False,
         )
