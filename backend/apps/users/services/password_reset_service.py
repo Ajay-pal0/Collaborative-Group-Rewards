@@ -83,7 +83,10 @@ def send_password_reset_email(user: User, raw_token: str) -> str:
         )
         logger.info(f"Password reset email sent to {user.email}")
     except Exception as e:
-        logger.warning(f"Failed to send email to {user.email}: {e}")
+        logger.error(f"Failed to send email to {user.email}: {e}")
+        # If SMTP is configured or in production, re-raise so caller knows dispatch failed
+        if not getattr(settings, 'DEBUG', False) or 'smtp' in str(getattr(settings, 'EMAIL_BACKEND', '')).lower():
+            raise
 
     return reset_url
 

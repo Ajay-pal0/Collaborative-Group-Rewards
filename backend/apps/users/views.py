@@ -103,28 +103,74 @@ class PanStatusView(APIView):
 class ForgotPasswordView(APIView):
     """
     POST /api/auth/forgot-password/
-    Validates user email, generates a secure, short-lived reset token,
-    stores its hash in the database, and sends a password reset email.
-    Always returns a generic message to prevent account enumeration.
+    Validates user email, ensures user exists and is active in the system,
+    generates a secure, short-lived reset token, stores its hash in the database,
+    and sends a password reset email to the user's registered email address.
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
+        email_raw = request.data.get('email', '')
+        if not email_raw or not str(email_raw).strip():
+            return Response(
+                {
+                    'detail': 'Email address is required.',
+                    'message': 'Email address is required.',
+                    'errors': {'email': ['Email address is required.']},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = ForgotPasswordSerializer(data=request.data)
         if not serializer.is_valid():
             err_msg = serializer.errors.get('email', ['Invalid email address.'])[0]
-            return Response({'detail': err_msg, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            is_not_found = 'No account found' in str(err_msg)
+            return Response(
+                {
+                    'detail': err_msg,
+                    'message': err_msg,
+                    'errors': serializer.errors,
+                },
+                status=status.HTTP_404_NOT_FOUND if is_not_found else status.HTTP_400_BAD_REQUEST,
+            )
 
         email = serializer.validated_data['email']
         user = User.objects.filter(email__iexact=email).first()
 
-        reset_url = None
-        if user and user.is_active:
-            raw_token, _ = generate_password_reset_token(user)
+        if not user:
+            return Response(
+                {
+                    'detail': 'No account found with this email address.',
+                    'message': 'No account found with this email address.',
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not user.is_active:
+            return Response(
+                {
+                    'detail': 'This account is inactive. Please contact support.',
+                    'message': 'This account is inactive. Please contact support.',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        raw_token, _ = generate_password_reset_token(user)
+        try:
             reset_url = send_password_reset_email(user, raw_token)
+        except Exception as e:
+            logger.error(f"Failed to send password reset email to {user.email}: {e}")
+            return Response(
+                {
+                    'detail': 'Failed to send password reset email. Please try again later.',
+                    'message': 'Failed to send password reset email. Please try again later.',
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         response_data = {
-            "message": "If an account exists for this email, a password reset link has been sent."
+            "success": True,
+            "message": f"Password reset link has been sent to your registered email address ({user.email}).",
         }
         # In DEBUG / local dev, attach reset_url to facilitate testing
         if getattr(settings, 'DEBUG', False) and reset_url:

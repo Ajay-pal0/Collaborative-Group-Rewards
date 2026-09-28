@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
+from django.core import mail
 from django.contrib.auth import authenticate
 from apps.users.models import User, PasswordResetToken
 from apps.users.services.password_reset_service import generate_password_reset_token
@@ -18,27 +19,46 @@ class PasswordResetTests(TestCase):
             password='oldpassword123',
         )
 
-    def test_forgot_password_existing_email_creates_token(self):
+    def test_forgot_password_existing_email_creates_token_and_sends_email(self):
+        mail.outbox.clear()
         response = self.client.post('/api/auth/forgot-password/', {
             'email': 'existing.user@example.com'
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('If an account exists for this email', response.data.get('message', ''))
+        self.assertIn('Password reset link has been sent', response.data.get('message', ''))
 
         token_record = PasswordResetToken.objects.filter(user=self.user).first()
         self.assertIsNotNone(token_record)
         self.assertIsNone(token_record.used_at)
         self.assertTrue(token_record.is_valid)
 
-    def test_forgot_password_non_existing_email_returns_generic_message(self):
+        # Ensure email was sent to user's registered email
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['existing.user@example.com'])
+        self.assertIn('Reset Your Password', mail.outbox[0].subject)
+
+    def test_forgot_password_non_existing_email_returns_404_error(self):
         initial_token_count = PasswordResetToken.objects.count()
+        mail.outbox.clear()
         response = self.client.post('/api/auth/forgot-password/', {
             'email': 'doesnotexist@example.com'
         }, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('If an account exists for this email', response.data.get('message', ''))
-        # Ensure no token is created for non-existing email
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('No account found with this email address', response.data.get('message', ''))
+        # Ensure no token is created and no email is sent for non-existing email
         self.assertEqual(PasswordResetToken.objects.count(), initial_token_count)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_forgot_password_inactive_user_returns_bad_request(self):
+        self.user.is_active = False
+        self.user.save()
+        mail.outbox.clear()
+        response = self.client.post('/api/auth/forgot-password/', {
+            'email': 'existing.user@example.com'
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('inactive', response.data.get('message', '').lower())
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_reset_password_with_valid_token_success(self):
         raw_token, token_obj = generate_password_reset_token(self.user)
