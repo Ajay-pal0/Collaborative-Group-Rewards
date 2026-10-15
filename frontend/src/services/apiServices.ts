@@ -10,6 +10,15 @@ import type {
   User,
   PanVerificationResponse,
   PanStatusResponse,
+  KycStatusResponse,
+  PanVerifyRequest,
+  PanVerifyResponse,
+  AadhaarInitiateRequest,
+  AadhaarInitiateResponse,
+  AadhaarVerifyRequest,
+  AadhaarVerifyResponse,
+  CreditProfile,
+  CreditReportRequest,
 } from '../types';
 
 // Centralized Auth API Service
@@ -63,11 +72,38 @@ export const rewardsApi = {
     api.post(`/groups/${groupId}/benefits/${benefitId}/claim/`),
 };
 
-// Centralized PAN Verification API Service
+// Centralized KYC & Identity Verification API Service
+export const kycApi = {
+  getStatus: () =>
+    api.get<KycStatusResponse>('/kyc/status/'),
+  verifyPan: (data: PanVerifyRequest) =>
+    api.post<PanVerifyResponse>('/kyc/pan/verify/', data),
+  initiateAadhaar: (data: AadhaarInitiateRequest) =>
+    api.post<AadhaarInitiateResponse>('/kyc/aadhaar/initialize/', data),
+  verifyAadhaar: (data: AadhaarVerifyRequest = {}) =>
+    api.post<AadhaarVerifyResponse>('/kyc/aadhaar/complete/', data),
+  cancelAadhaar: (data: { client_id?: string } = {}) =>
+    api.post<{ success: boolean; message: string }>('/kyc/aadhaar/cancel/', data),
+  getCreditReport: () =>
+    api.get<CreditProfile>('/kyc/credit-report/'),
+  requestCreditReport: (data: CreditReportRequest) =>
+    api.post<CreditProfile>('/kyc/credit-report/', data),
+};
+
+// Centralized Credit Information API Service
+export const creditApi = {
+  getProfile: () =>
+    api.get<CreditProfile>('/v1/credit/profile/'),
+  requestReport: (data: CreditReportRequest) =>
+    api.post<CreditProfile>('/v1/credit/report/', data),
+};
+
+// Centralized PAN Verification API Service (Backwards compatibility)
 export const panApi = {
   verifyPan: (data: { pan: string }) =>
     api.post<PanVerificationResponse>('/auth/pan/verify/', data),
   getPanStatus: () =>
     api.get<PanStatusResponse>('/auth/pan/status/'),
 };
+
 

@@ -1,9 +1,12 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* package-lock.json* ./
-RUN npm install -g pnpm && pnpm install
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+COPY package.json pnpm-lock.yaml* package-lock.json* .npmrc* ./
+RUN npm install -g pnpm@10.33.2 && pnpm install
 
 COPY . .
 

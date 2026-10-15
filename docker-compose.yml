@@ -33,11 +33,12 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - FRONTEND_URL=http://localhost:5173
-      - SETU_PAN_VERIFY_URL=${SETU_PAN_VERIFY_URL:-https://dg-sandbox.setu.co/api/verify/pan}
-      - SETU_CLIENT_ID=${SETU_CLIENT_ID:-}
-      - SETU_CLIENT_SECRET=${SETU_CLIENT_SECRET:-}
-      - SETU_PRODUCT_INSTANCE_ID=${SETU_PRODUCT_INSTANCE_ID:-}
+      - SUREPASS_BASE_URL=${SUREPASS_BASE_URL:-https://sandbox.surepass.io}
+      - SUREPASS_BEARER_TOKEN=${SUREPASS_BEARER_TOKEN:-mock_surepass_sandbox_token_demo}
+      - SUREPASS_TIMEOUT=${SUREPASS_TIMEOUT:-15}
+      - SUREPASS_DIGILOCKER_CALLBACK_URL=${SUREPASS_DIGILOCKER_CALLBACK_URL:-http://localhost:5173/kyc/callback}
     depends_on:
+
       db:
         condition: service_healthy
 

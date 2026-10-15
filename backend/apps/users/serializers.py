@@ -31,6 +31,7 @@ class LoginSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     pan_masked = serializers.CharField(read_only=True)
+    aadhaar_masked = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -43,8 +44,13 @@ class UserSerializer(serializers.ModelSerializer):
             'pan_masked',
             'pan_registered_name',
             'pan_verified_at',
+            'aadhaar_verified',
+            'aadhaar_masked',
+            'aadhaar_registered_name',
+            'aadhaar_verified_at',
             'created_at',
         )
+
 
 
 class PanVerifySerializer(serializers.Serializer):

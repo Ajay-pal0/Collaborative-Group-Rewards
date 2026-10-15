@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Modal from './Modal';
+import VerificationBadge from './VerificationBadge';
 import type { GroupMember } from '../types';
+
 import {
   User,
   ShieldCheck,
@@ -217,17 +219,24 @@ export default function MembersModal({
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-bold text-[#171923] truncate">{userName}</span>
                         {isOwner && (
                           <span className="text-[9px] font-extrabold text-[#B45309] bg-[#FEF0C7] border border-[#F5B942]/30 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                             <ShieldCheck className="w-2.5 h-2.5" /> Owner
                           </span>
                         )}
+                        {m.user.pan_verified && (
+                          <VerificationBadge type="pan" status="VERIFIED" size="sm" showLabel={false} />
+                        )}
+                        {m.user.aadhaar_verified && (
+                          <VerificationBadge type="aadhaar" status="VERIFIED" size="sm" showLabel={false} />
+                        )}
                       </div>
                       <p className="text-[11px] text-[#667085] flex items-center gap-1 mt-0.5 truncate">
                         <Mail className="w-3 h-3 text-[#98A2B3] shrink-0" /> {m.user.email}
                       </p>
+
                     </div>
                   </div>
 

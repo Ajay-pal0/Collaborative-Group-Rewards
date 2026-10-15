@@ -7,7 +7,132 @@ export interface User {
   pan_masked?: string;
   pan_registered_name?: string;
   pan_verified_at?: string;
+  aadhaar_verified?: boolean;
+  aadhaar_masked?: string;
+  aadhaar_registered_name?: string;
+  aadhaar_verified_at?: string;
   created_at?: string;
+}
+
+export type VerificationStatus = 'NOT_STARTED' | 'PENDING' | 'VERIFIED' | 'FAILED' | 'EXPIRED';
+
+export interface BadgeInfo {
+  label: string;
+  awarded: boolean;
+  status: string;
+}
+
+export interface VerificationDetail {
+  status: VerificationStatus;
+  is_verified: boolean;
+  masked_id: string;
+  registered_name: string;
+  verified_at: string | null;
+  badge: BadgeInfo;
+  financial_profile?: PanFinancialProfile | null;
+}
+
+export interface PanFinancialProfile {
+  is_pan_verified: boolean;
+  pan_masked: string;
+  registered_name: string;
+  category?: string | null;
+  pan_status?: string | null;
+  aadhaar_linked?: boolean;
+  aadhaar_seeding_status?: string | null;
+  kyc_tier?: string;
+  tax_compliance?: string;
+  verification_source?: string | null;
+  confidence_score?: number | null;
+  credit_readiness_score?: number;
+  credit_readiness_band?: string;
+}
+
+export interface KycStatusResponse {
+  success: boolean;
+  verifications: {
+    pan: VerificationDetail;
+    aadhaar: VerificationDetail;
+  };
+}
+
+export interface PanVerifyRequest {
+  pan_number?: string;
+  pan?: string;
+  consent: boolean;
+}
+
+export interface PanVerifyResponse {
+  success: boolean;
+  verification_type: string;
+  status: string;
+  badge: BadgeInfo;
+  data?: {
+    masked_id: string;
+    registered_name: string;
+    verified_at: string;
+  };
+  already_verified?: boolean;
+  error?: string;
+  message?: string;
+}
+
+export interface AadhaarInitiateRequest {
+  consent: boolean;
+  redirect_url?: string;
+}
+
+export interface AadhaarInitiateResponse {
+  success: boolean;
+  verification_type: string;
+  status: string;
+  authorization_url: string;
+  client_id: string;
+  token?: string;
+  expiry_seconds?: number;
+  badge: BadgeInfo;
+  message?: string;
+  error?: string;
+}
+
+export interface AadhaarVerifyRequest {
+  client_id?: string;
+}
+
+export interface AadhaarVerifyResponse {
+  success: boolean;
+  verification_type: string;
+  status: string;
+  badge: BadgeInfo;
+  data?: {
+    masked_id: string;
+    registered_name: string;
+    verified_at: string;
+  };
+  already_verified?: boolean;
+  error?: string;
+  message?: string;
+}
+
+export interface CreditProfile {
+  success: boolean;
+  status: string;
+  has_report: boolean;
+  credit_score: number | null;
+  score_band: string | null;
+  total_outstanding: number | null;
+  active_accounts_count: number;
+  overdue_amount: number | null;
+  last_report_date: string | null;
+  status_message: string;
+  can_retry: boolean;
+  message?: string;
+  pan_financial_info?: PanFinancialProfile;
+}
+
+export interface CreditReportRequest {
+  consent: boolean;
+  purpose?: string;
 }
 
 export interface PanVerificationData {
@@ -16,6 +141,8 @@ export interface PanVerificationData {
   name: string;
   verified_at: string | null;
   already_verified?: boolean;
+  masked_id?: string;
+  registered_name?: string;
 }
 
 export interface PanVerificationResponse {
@@ -31,6 +158,7 @@ export interface PanStatusResponse {
   name: string;
   verified_at: string | null;
 }
+
 
 
 export interface Group {

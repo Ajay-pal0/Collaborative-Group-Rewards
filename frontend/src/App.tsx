@@ -7,6 +7,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import GroupsDashboardPage from './pages/GroupsDashboardPage';
 import JoinGroupPage from './pages/JoinGroupPage';
+import KycCallbackPage from './pages/KycCallbackPage';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+              <Route path="/kyc/callback" element={<KycCallbackPage />} />
 
               {/* Group Dashboard Routes */}
               <Route

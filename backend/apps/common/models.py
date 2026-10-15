@@ -4,7 +4,7 @@ from django.db import models
 
 class ExternalApiLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    provider = models.CharField(max_length=64, db_index=True, help_text='External service provider (e.g. setu)')
+    provider = models.CharField(max_length=64, db_index=True, help_text='External service provider (e.g. surepass)')
     api_name = models.CharField(max_length=128, db_index=True, help_text='Logical API name (e.g. pan_verification)')
     endpoint_url = models.TextField(help_text='Destination URL')
     http_method = models.CharField(max_length=10)

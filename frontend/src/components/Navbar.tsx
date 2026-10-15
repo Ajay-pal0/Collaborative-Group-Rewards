@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Group } from '../types';
+import VerificationBadge from './VerificationBadge';
 import { Sparkles, Plus, ChevronDown, LogOut, UsersRound, User } from 'lucide-react';
+
 
 interface NavbarProps {
   groups?: Group[];
@@ -90,7 +92,12 @@ export default function Navbar({ groups = [], currentGroupId, onOpenCreateGroup 
                   <p className="text-[10px] font-bold text-[#98A2B3] uppercase tracking-wider">Signed in as</p>
                   <p className="text-xs font-bold text-[#171923] truncate">{user?.name}</p>
                   <p className="text-[11px] text-[#667085] truncate">{user?.email}</p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <VerificationBadge type="pan" status={user?.pan_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
+                    <VerificationBadge type="aadhaar" status={user?.aadhaar_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
+                  </div>
                 </div>
+
 
                 {/* Mobile Group Switcher */}
                 {groups.length > 0 && (

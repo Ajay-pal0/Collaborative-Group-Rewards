@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'apps.groups',
     'apps.rewards',
     'apps.activities',
+    'apps.kyc',
+    'apps.credit',
 ]
 
 
@@ -231,11 +233,16 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 
-# EXTERNAL INTEGRATIONS - SETU PAN VERIFICATION
-SETU_PAN_VERIFY_URL = 'https://dg-sandbox.setu.co/api/verify/pan'
-SETU_CLIENT_ID = '810bb42a-e09f-490a-838e-d9212a7966de'
-SETU_CLIENT_SECRET = 'wARjJ7E6kMPD8YmrNTx7w7afMQCijB3t'
-SETU_PRODUCT_INSTANCE_ID = '9578859d-c667-43f3-8712-c92df29998d9'
+# EXTERNAL INTEGRATIONS - SUREPASS KYC (PAN COMPREHENSIVE & DIGILOCKER)
+
+SUREPASS_BASE_URL = config('SUREPASS_BASE_URL', default='https://sandbox.surepass.app').rstrip('/')
+SUREPASS_BEARER_TOKEN = config('SUREPASS_BEARER_TOKEN', default='mock_surepass_sandbox_token_demo')
+SUREPASS_TIMEOUT = config('SUREPASS_TIMEOUT', default=15, cast=int)
+SUREPASS_DIGILOCKER_CALLBACK_URL = config(
+    'SUREPASS_DIGILOCKER_CALLBACK_URL',
+    default='http://localhost:5173/kyc/callback'
+)
+SUREPASS_WEBHOOK_SECRET = config('SUREPASS_WEBHOOK_SECRET', default='')
 
 
 # EMAIL CONFIGURATION & PASSWORD RESET
@@ -289,6 +296,21 @@ LOGGING = {
             'propagate': False,
         },
         'users.pan_service': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'kyc.surepass_service': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'kyc.service': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'credit.service': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,

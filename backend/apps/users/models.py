@@ -42,17 +42,29 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def pan_verification_record(self):
+        # Check canonical KYC identity verification first
+        kyc_rec = self.identity_verifications.filter(verification_type='PAN', status='VERIFIED').first()
+        if kyc_rec:
+            return kyc_rec
         return getattr(self, 'pan_verification', None)
 
     @property
     def pan_verified(self):
         rec = self.pan_verification_record
-        return rec.is_verified if rec else False
+        if not rec:
+            return False
+        if hasattr(rec, 'status'):
+            return rec.status == 'VERIFIED'
+        return rec.is_verified
 
     @property
     def pan_masked(self):
         rec = self.pan_verification_record
-        return rec.pan_masked if rec else ''
+        if not rec:
+            return ''
+        if hasattr(rec, 'masked_id'):
+            return rec.masked_id
+        return rec.pan_masked
 
     @property
     def pan_registered_name(self):
@@ -62,6 +74,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def pan_verified_at(self):
         rec = self.pan_verification_record
+        return rec.verified_at if rec else None
+
+    @property
+    def aadhaar_verification_record(self):
+        return self.identity_verifications.filter(verification_type='AADHAAR').first()
+
+    @property
+    def aadhaar_verified(self):
+        rec = self.aadhaar_verification_record
+        return rec.status == 'VERIFIED' if rec else False
+
+    @property
+    def aadhaar_masked(self):
+        rec = self.aadhaar_verification_record
+        return rec.masked_id if rec else ''
+
+    @property
+    def aadhaar_registered_name(self):
+        rec = self.aadhaar_verification_record
+        return rec.registered_name if rec else ''
+
+    @property
+    def aadhaar_verified_at(self):
+        rec = self.aadhaar_verification_record
         return rec.verified_at if rec else None
 
 
@@ -75,7 +111,7 @@ class PanVerification(models.Model):
     pan_number = models.CharField(max_length=10, help_text='10-character PAN number')
     is_verified = models.BooleanField(default=False, db_index=True)
     verified_at = models.DateTimeField(null=True, blank=True)
-    verification_id = models.CharField(max_length=255, blank=True, default='', help_text='Setu verification ID')
+    verification_id = models.CharField(max_length=255, blank=True, default='', help_text='Provider verification ID')
     registered_name = models.CharField(max_length=255, blank=True, default='', help_text='Name returned from PAN registry')
     category = models.CharField(max_length=100, blank=True, default='')
     aadhaar_seeding_status = models.CharField(max_length=50, blank=True, default='')

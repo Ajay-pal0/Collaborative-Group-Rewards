@@ -61,8 +61,9 @@ class MeView(APIView):
 class PanVerifyView(APIView):
     """
     POST /api/auth/pan/verify/
-    Verifies user's PAN via the centralized Setu integration layer.
+    Verifies user's PAN via the centralized Surepass integration layer.
     """
+
     def post(self, request):
         from .serializers import PanVerifySerializer
         from .services.pan_service import verify_user_pan
