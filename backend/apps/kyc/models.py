@@ -63,7 +63,9 @@ class IdentityVerification(models.Model):
         help_text='Sanitized provider metadata (no unmasked secrets or sensitive PII)'
     )
     error_message = models.TextField(blank=True, default='')
+    failure_code = models.CharField(max_length=50, blank=True, default='')
     verified_at = models.DateTimeField(null=True, blank=True)
+    last_attempted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -92,6 +94,42 @@ class IdentityVerification(models.Model):
             'awarded': self.is_verified,
             'status': self.status.lower(),
         }
+
+
+class VerificationAttempt(models.Model):
+    """
+    Tracks individual initiation and retry attempts, status transitions,
+    timestamps, provider references, and sanitized error details.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    verification = models.ForeignKey(
+        IdentityVerification,
+        on_delete=models.CASCADE,
+        related_name='attempts',
+        null=True,
+        blank=True
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='verification_attempts'
+    )
+    verification_type = models.CharField(max_length=20, choices=VerificationType.choices)
+    status = models.CharField(max_length=20, default='INITIATED')
+    attempt_number = models.IntegerField(default=1)
+    provider = models.CharField(max_length=50, default='SUREPASS')
+    provider_reference = models.CharField(max_length=255, blank=True, default='')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    sanitized_error = models.CharField(max_length=255, blank=True, default='')
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'kyc_verification_attempts'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user.email} - {self.verification_type} Attempt #{self.attempt_number} ({self.status})'
 
 
 class IdentityVerificationAudit(models.Model):
@@ -156,9 +194,12 @@ class VerificationConsent(models.Model):
     verification_type = models.CharField(max_length=20, choices=ConsentType.choices)
     purpose = models.CharField(max_length=255)
     disclosure_version = models.CharField(max_length=50, default='v1.0')
+    associated_request_id = models.CharField(max_length=255, blank=True, default='')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, default='')
     consent_given = models.BooleanField(default=True)
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -167,3 +208,7 @@ class VerificationConsent(models.Model):
 
     def __str__(self):
         return f'{self.user.email} - Consent for {self.verification_type} ({self.created_at})'
+
+
+# Alias for explicit domain reference
+ConsentRecord = VerificationConsent

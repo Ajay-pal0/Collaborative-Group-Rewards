@@ -5,7 +5,7 @@ import { authApi, panApi, kycApi } from '../services/apiServices';
 import { extractErrorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { AuthResponse } from '../types';
-import { mountDigiboostSdk } from '../features/kyc/digiboostSdk';
+import { preOpenAuthWindow, openDigilockerInNewTab } from '../features/kyc/digiboostSdk';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -160,7 +160,10 @@ export function useAuthForm() {
       setAadhaarError('Please provide consent to proceed with Aadhaar verification.');
       return;
     }
+
+    const preOpenedTab = preOpenAuthWindow();
     setAadhaarLoading(true);
+
     try {
       const callbackUrl = window.location.origin + '/kyc/callback';
       const res = await kycApi.initiateAadhaar({
@@ -169,6 +172,7 @@ export function useAuthForm() {
       });
 
       if (!res.data.success) {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
         setAadhaarError(res.data.error || 'Failed to initiate DigiLocker verification.');
         setAadhaarLoading(false);
         return;
@@ -176,8 +180,9 @@ export function useAuthForm() {
 
       const clientId = res.data.client_id;
       const sdkToken = res.data.token;
+      const authUrl = res.data.authorization_url;
 
-      const confirmVerification = async () => {
+      const confirmVerification = async (): Promise<boolean> => {
         try {
           const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
           if (verifyRes.data.success) {
@@ -195,53 +200,81 @@ export function useAuthForm() {
                 aadhaar_verified_at: new Date().toISOString(),
               });
             }
-          } else {
-            setAadhaarError(verifyRes.data.error || 'Aadhaar verification could not be confirmed.');
+            setAadhaarLoading(false);
+            return true;
           }
+          return false;
         } catch (confirmErr) {
           setAadhaarError(extractErrorMessage(confirmErr));
-        } finally {
-          setAadhaarLoading(false);
+          return false;
         }
       };
 
       if (sdkToken && !sdkToken.startsWith('mock_')) {
-        try {
-          await mountDigiboostSdk({
-            token: sdkToken,
-            gateway: 'sandbox',
-            buttonTitle: 'Verify with DigiLocker',
-            onSuccess: async () => {
-              await confirmVerification();
-            },
-            onFailure: (err) => {
-              setAadhaarError(typeof err === 'string' ? err : 'DigiLocker verification was cancelled.');
-              setAadhaarLoading(false);
-            },
-          });
-          // Also listen for completion window messages
-          const onMessage = async (event: MessageEvent) => {
-            if (event.data?.type === 'digilocker:complete') {
-              window.removeEventListener('message', onMessage);
-              await confirmVerification();
-            } else if (event.data?.type === 'digilocker:failed') {
-              window.removeEventListener('message', onMessage);
-              setAadhaarError('DigiLocker verification was cancelled.');
+        let isDone = false;
+        let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+        const stopPolling = () => {
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        };
+
+        const { authWindow, cleanup } = openDigilockerInNewTab({
+          authorizationUrl: authUrl,
+          token: sdkToken,
+          gateway: 'sandbox',
+          windowRef: preOpenedTab,
+          onSuccess: async () => {
+            if (isDone) return;
+            isDone = true;
+            stopPolling();
+            cleanup();
+            await confirmVerification();
+          },
+          onFailure: async (failReason) => {
+            if (isDone) return;
+            const ok = await confirmVerification();
+            if (!ok) {
+              isDone = true;
+              stopPolling();
+              cleanup();
+              setAadhaarError(typeof failReason === 'string' ? failReason : 'DigiLocker verification was cancelled or closed.');
               setAadhaarLoading(false);
             }
-          };
-          window.addEventListener('message', onMessage);
-        } catch {
-          if (res.data.authorization_url) {
-            window.location.href = res.data.authorization_url;
-          } else {
-            await confirmVerification();
+          },
+        });
+
+        // Background auto-polling
+        let polls = 0;
+        pollTimer = setInterval(async () => {
+          polls++;
+          if (polls > 100 || isDone) {
+            stopPolling();
+            if (!isDone) setAadhaarLoading(false);
+            return;
           }
-        }
+          const ok = await confirmVerification();
+          if (ok) {
+            isDone = true;
+            stopPolling();
+            cleanup();
+            if (authWindow && !authWindow.closed) {
+              try {
+                authWindow.close();
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }, 3000);
       } else {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
         await confirmVerification();
       }
     } catch (err: unknown) {
+      if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
       setAadhaarError(extractErrorMessage(err));
       setAadhaarLoading(false);
     }

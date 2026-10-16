@@ -41,23 +41,6 @@ function formatRelativeTime(dateString?: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-// Generate consistent avatar color based on user name
-function getUserColor(name: string) {
-  const colors = [
-    { bg: 'bg-gradient-to-br from-[#635BFF] to-[#4F46E5]' },
-    { bg: 'bg-gradient-to-br from-[#0D9488] to-[#059669]' },
-    { bg: 'bg-gradient-to-br from-[#D97706] to-[#B45309]' },
-    { bg: 'bg-gradient-to-br from-[#EC4899] to-[#DB2777]' },
-    { bg: 'bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED]' },
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-}
-
 export default function ActivityModal({
   open,
   onClose,
@@ -115,88 +98,88 @@ export default function ActivityModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Group Activity Stream">
-      <div className="space-y-4 text-[#171923]">
+      <div className="space-y-4 text-[#0c0a09]">
         {/* Banner Summary Header */}
-        <div className="bg-gradient-to-r from-[#635BFF]/10 via-[#635BFF]/5 to-transparent border border-[#635BFF]/20 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white flex items-center justify-center shadow-sm">
-              <TrendingUp className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-[#0c0a09] text-white flex items-center justify-center shadow-xs">
+              <TrendingUp className="w-5 h-5 text-[#fd8d60]" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-[#171923]">
+              <h3 className="font-bold text-sm text-[#0c0a09]">
                 {groupName} Activity Feed
               </h3>
-              <p className="text-[11px] text-[#667085]">
+              <p className="text-xs text-[#78716c]">
                 {activities.length} total events logged across {uniqueContributors} active {uniqueContributors === 1 ? 'member' : 'members'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="bg-white border border-[#E7E9EE] px-3 py-1 rounded-xl shadow-2xs text-center">
-              <span className="text-[9px] uppercase font-bold text-[#667085] block">Group Points</span>
-              <span className="text-xs font-black text-[#635BFF]">+{totalPointsEarned} pts</span>
+            <div className="bg-white border border-[#e7e5e4] px-3.5 py-1.5 rounded-xl shadow-2xs text-center">
+              <span className="text-[10px] uppercase font-bold text-[#78716c] block">Group Points</span>
+              <span className="text-xs font-bold text-[#b4552d]">+{totalPointsEarned} pts</span>
             </div>
           </div>
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 bg-[#F2F4F7] p-1.5 rounded-2xl overflow-x-auto">
+        <div className="flex items-center gap-1.5 bg-[#f5f5f5] p-1.5 rounded-2xl overflow-x-auto">
           <button
             onClick={() => setActiveCategory('all')}
-            className={`flex-1 min-w-[90px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+            className={`flex-1 min-w-[85px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
               activeCategory === 'all'
-                ? 'bg-white text-[#635BFF] shadow-xs'
-                : 'text-[#667085] hover:text-[#171923]'
+                ? 'bg-white text-[#0c0a09] shadow-xs'
+                : 'text-[#78716c] hover:text-[#0c0a09]'
             }`}
           >
             <Filter className="w-3.5 h-3.5" /> All ({activities.length})
           </button>
           <button
             onClick={() => setActiveCategory('tasks')}
-            className={`flex-1 min-w-[90px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+            className={`flex-1 min-w-[85px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
               activeCategory === 'tasks'
-                ? 'bg-white text-[#635BFF] shadow-xs'
-                : 'text-[#667085] hover:text-[#171923]'
+                ? 'bg-white text-[#0c0a09] shadow-xs'
+                : 'text-[#78716c] hover:text-[#0c0a09]'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-[#F5B942]" /> Tasks
+            <Zap className="w-3.5 h-3.5 text-[#d97706]" /> Tasks
           </button>
           <button
             onClick={() => setActiveCategory('members')}
-            className={`flex-1 min-w-[90px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+            className={`flex-1 min-w-[85px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
               activeCategory === 'members'
-                ? 'bg-white text-[#635BFF] shadow-xs'
-                : 'text-[#667085] hover:text-[#171923]'
+                ? 'bg-white text-[#0c0a09] shadow-xs'
+                : 'text-[#78716c] hover:text-[#0c0a09]'
             }`}
           >
-            <UsersRound className="w-3.5 h-3.5 text-[#0070F3]" /> Members
+            <UsersRound className="w-3.5 h-3.5 text-[#0c0a09]" /> Members
           </button>
           <button
             onClick={() => setActiveCategory('rewards')}
-            className={`flex-1 min-w-[90px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+            className={`flex-1 min-w-[85px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
               activeCategory === 'rewards'
-                ? 'bg-white text-[#635BFF] shadow-xs'
-                : 'text-[#667085] hover:text-[#171923]'
+                ? 'bg-white text-[#0c0a09] shadow-xs'
+                : 'text-[#78716c] hover:text-[#0c0a09]'
             }`}
           >
-            <Gift className="w-3.5 h-3.5 text-[#12B76A]" /> Rewards
+            <Gift className="w-3.5 h-3.5 text-[#10b981]" /> Rewards
           </button>
         </div>
 
         {/* Prominent Search Bar */}
         <div className="relative">
-          <Search className="w-4 h-4 text-[#98A2B3] absolute left-3.5 top-2.5" />
+          <Search className="w-4 h-4 text-[#78716c] absolute left-3.5 top-2.5" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Filter stream by member name, task, or activity..."
-            className="w-full bg-[#F8F9FC] border border-[#E7E9EE] rounded-xl pl-10 pr-8 py-2 text-xs text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] focus:bg-white placeholder-[#98A2B3] shadow-2xs transition-all"
+            className="w-full bg-[#f8fafc] border border-[#e7e5e4] rounded-xl pl-10 pr-8 py-2 text-xs text-[#0c0a09] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white placeholder:text-[#a8a29e] shadow-2xs transition-all"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-2.5 text-[#98A2B3] hover:text-[#171923] cursor-pointer"
+              className="absolute right-3 top-2.5 text-[#78716c] hover:text-[#0c0a09] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -206,13 +189,13 @@ export default function ActivityModal({
         {/* Activity Stream Container */}
         <div className="max-h-80 overflow-y-auto space-y-2.5 pr-1">
           {filteredActivities.length === 0 ? (
-            <div className="text-center py-10 bg-[#F8F9FC] rounded-2xl border border-dashed border-[#E7E9EE] space-y-3">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-xs text-[#98A2B3]">
+            <div className="text-center py-10 bg-[#fafafa] rounded-2xl border border-dashed border-[#e7e5e4] space-y-3">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-xs text-[#a8a29e]">
                 <Zap className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-bold text-[#171923]">No activities match your filters</p>
-                <p className="text-[11px] text-[#667085]">Try clearing your search query or selecting "All".</p>
+                <p className="text-xs font-bold text-[#0c0a09]">No activities match your filters</p>
+                <p className="text-xs text-[#78716c]">Try clearing your search query or selecting "All".</p>
               </div>
               {(searchTerm || activeCategory !== 'all') && (
                 <button
@@ -220,7 +203,7 @@ export default function ActivityModal({
                     setSearchTerm('');
                     setActiveCategory('all');
                   }}
-                  className="text-xs font-bold text-[#635BFF] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[#b4552d] hover:underline cursor-pointer"
                 >
                   Reset filters
                 </button>
@@ -230,81 +213,80 @@ export default function ActivityModal({
             filteredActivities.map((act) => {
               const actorName = String(act.member_name || act.metadata?.member_name || act.metadata?.user_name || 'Member');
               const initial = actorName.charAt(0).toUpperCase();
-              const userColor = getUserColor(actorName);
 
               let IconComponent = Zap;
-              let iconColor = 'text-[#F5B942]';
-              let badgeBg = 'bg-[#FEF0C7] text-[#B45309] border-[#F5B942]/30';
+              let iconColor = 'text-[#d97706]';
+              let badgeBg = 'bg-[#fef3c7] text-[#92400e] border-[#fde68a]';
               let actionJSX: React.ReactNode;
               let pointsText = '+100 pts';
 
               if (act.event_type === 'group_created') {
                 IconComponent = ShieldCheck;
-                iconColor = 'text-[#635BFF]';
-                badgeBg = 'bg-[#635BFF]/10 text-[#635BFF] border-[#635BFF]/20';
+                iconColor = 'text-[#0c0a09]';
+                badgeBg = 'bg-[#f5f5f5] text-[#0c0a09] border-[#e7e5e4]';
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> created group{' '}
-                    <span className="font-semibold text-[#635BFF]">"{String(act.metadata?.group_name || groupName)}"</span>
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> created group{' '}
+                    <span className="font-semibold text-[#b4552d]">"{String(act.metadata?.group_name || groupName)}"</span>
                   </span>
                 );
                 pointsText = '+100 pts';
               } else if (act.event_type === 'invite_created') {
                 IconComponent = Sparkles;
-                iconColor = 'text-[#635BFF]';
-                badgeBg = 'bg-[#635BFF]/10 text-[#635BFF] border-[#635BFF]/20';
+                iconColor = 'text-[#b4552d]';
+                badgeBg = 'bg-[#ffdbce] text-[#370e00] border-[#ffb599]';
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> created an invite link
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> created an invite link
                   </span>
                 );
                 pointsText = '+25 pts';
               } else if (act.event_type === 'member_joined') {
                 IconComponent = UserPlus;
-                iconColor = 'text-[#0070F3]';
-                badgeBg = 'bg-[#0070F3]/10 text-[#0070F3] border-[#0070F3]/20';
+                iconColor = 'text-[#0c0a09]';
+                badgeBg = 'bg-[#f5f5f5] text-[#0c0a09] border-[#e7e5e4]';
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> joined the group
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> joined the group
                   </span>
                 );
                 pointsText = '+100 pts';
               } else if (act.event_type === 'task_completed') {
                 IconComponent = Zap;
-                iconColor = 'text-[#F5B942]';
-                badgeBg = 'bg-[#ECFDF3] text-[#12B76A] border-[#12B76A]/20';
+                iconColor = 'text-[#d97706]';
+                badgeBg = 'bg-emerald-50 text-emerald-800 border-emerald-200';
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> completed task{' '}
-                    <span className="font-semibold text-[#635BFF]">"{String(act.metadata?.task_name || 'Task')}"</span>
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> completed task{' '}
+                    <span className="font-semibold text-[#0c0a09]">"{String(act.metadata?.task_name || 'Task')}"</span>
                   </span>
                 );
                 pointsText = `+${String(act.metadata?.points || 150)} pts`;
               } else if (act.event_type === 'profile_completed') {
                 IconComponent = CheckCircle2;
-                iconColor = 'text-[#0D9488]';
-                badgeBg = 'bg-[#0D9488]/10 text-[#0D9488] border-[#0D9488]/20';
+                iconColor = 'text-[#10b981]';
+                badgeBg = 'bg-[#ffdbce] text-[#370e00] border-[#ffb599]';
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> completed profile details
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> completed profile details
                   </span>
                 );
                 pointsText = `+${String(act.metadata?.points || 50)} pts`;
               } else if (act.event_type === 'benefit_claimed') {
                 IconComponent = Gift;
-                iconColor = 'text-[#12B76A]';
-                badgeBg = 'bg-[#ECFDF3] text-[#12B76A] border-[#12B76A]/30';
+                iconColor = 'text-[#10b981]';
+                badgeBg = 'bg-[#fff7ed] text-[#7c2d12] border-[#fed7aa]';
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> claimed benefit{' '}
-                    <span className="font-semibold text-[#12B76A]">"{String(act.metadata?.benefit_name || 'Reward')}"</span>
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> claimed benefit{' '}
+                    <span className="font-semibold text-[#10b981]">"{String(act.metadata?.benefit_name || 'Reward')}"</span>
                   </span>
                 );
                 pointsText = 'Reward';
               } else {
                 actionJSX = (
                   <span>
-                    <strong className="font-extrabold text-[#171923]">{actorName}</strong> triggered {act.event_type}
+                    <strong className="font-bold text-[#0c0a09]">{actorName}</strong> triggered {act.event_type}
                   </span>
                 );
               }
@@ -314,32 +296,30 @@ export default function ActivityModal({
               return (
                 <div
                   key={act.id}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-white border border-[#E7E9EE] hover:border-[#635BFF]/30 hover:shadow-xs transition-all text-xs group"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white border border-[#e7e5e4] hover:border-[#0c0a09]/20 hover:shadow-xs transition-all text-xs group"
                 >
                   <div className="flex items-center gap-3.5 min-w-0 pr-2">
                     {/* User Avatar with Action Overlay Icon */}
                     <div className="relative shrink-0">
-                      <div
-                        className={`w-10 h-10 rounded-xl ${userColor.bg} text-white flex items-center justify-center font-black text-sm shadow-xs border border-white/20`}
-                      >
+                      <div className="w-10 h-10 rounded-xl bg-[#0c0a09] text-white flex items-center justify-center font-bold text-xs shadow-xs border border-white/20">
                         {initial}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border border-[#E7E9EE] flex items-center justify-center shadow-2xs">
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border border-[#e7e5e4] flex items-center justify-center shadow-2xs">
                         <IconComponent className={`w-2.5 h-2.5 ${iconColor}`} />
                       </div>
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-[#171923] text-xs leading-snug">{actionJSX}</p>
-                      <p className="text-[10px] font-medium text-[#98A2B3] flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3 text-[#98A2B3]" /> {relativeTime}
+                      <p className="text-[#0c0a09] text-xs leading-snug">{actionJSX}</p>
+                      <p className="text-[11px] font-medium text-[#78716c] flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3 text-[#78716c]" /> {relativeTime}
                       </p>
                     </div>
                   </div>
 
                   {/* Points Badge */}
                   <span
-                    className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border shrink-0 ${badgeBg}`}
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${badgeBg}`}
                   >
                     {pointsText}
                   </span>
@@ -350,14 +330,14 @@ export default function ActivityModal({
         </div>
 
         {/* Footer */}
-        <div className="pt-3 border-t border-[#E7E9EE] flex items-center justify-between">
-          <span className="text-[11px] text-[#667085]">
-            Showing <strong className="text-[#171923]">{filteredActivities.length}</strong> of {activities.length} activities
+        <div className="pt-3 border-t border-[#e7e5e4] flex items-center justify-between">
+          <span className="text-xs text-[#78716c]">
+            Showing <strong className="text-[#0c0a09]">{filteredActivities.length}</strong> of {activities.length} activities
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-bold bg-[#635BFF] hover:bg-[#4F46E5] text-white rounded-xl transition-all shadow-xs cursor-pointer"
+            className="px-5 py-2 text-xs font-bold bg-[#0c0a09] hover:bg-neutral-800 text-white rounded-xl transition-all shadow-xs cursor-pointer active:scale-98"
           >
             Done
           </button>

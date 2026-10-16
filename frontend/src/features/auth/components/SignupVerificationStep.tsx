@@ -54,35 +54,35 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
   return (
     <div className="space-y-4">
       <div className="text-center space-y-1">
-        <div className="w-10 h-10 rounded-2xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mx-auto mb-1.5">
-          <ShieldCheck className="w-5 h-5 text-[#635BFF]" />
+        <div className="w-10 h-10 rounded-2xl bg-[#0c0a09]/5 text-[#0c0a09] flex items-center justify-center mx-auto mb-1.5 border border-[#e7e5e4]">
+          <ShieldCheck className="w-5 h-5 text-[#0c0a09]" />
         </div>
-        <h3 className="text-base font-extrabold text-[#171923]">PAN Verification (Optional)</h3>
-        <p className="text-xs text-[#667085]">
+        <h3 className="text-base font-bold text-[#0c0a09]">PAN Verification (Optional)</h3>
+        <p className="text-xs text-[#78716c]">
           Verify your PAN or Aadhaar now for instant reward verification badges, or skip and do it later.
         </p>
       </div>
 
       {/* Verification Method Switcher */}
-      <div className="flex bg-[#F2F4F7] p-1 rounded-xl">
+      <div className="flex bg-[#f5f5f4] p-1 rounded-full border border-[#e7e5e4]">
         <button
           type="button"
           onClick={() => setSignupVerificationTab('pan')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            signupVerificationTab === 'pan' ? 'bg-white text-[#171923] shadow-xs' : 'text-[#667085] hover:text-[#171923]'
+          className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            signupVerificationTab === 'pan' ? 'bg-white text-[#0c0a09] shadow-xs' : 'text-[#78716c] hover:text-[#0c0a09]'
           }`}
         >
-          <CreditCard className="w-3.5 h-3.5 text-[#635BFF]" />
+          <CreditCard className="w-3.5 h-3.5 text-[#0c0a09]" />
           <span>PAN Card</span>
         </button>
         <button
           type="button"
           onClick={() => setSignupVerificationTab('aadhaar')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            signupVerificationTab === 'aadhaar' ? 'bg-white text-[#171923] shadow-xs' : 'text-[#667085] hover:text-[#171923]'
+          className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            signupVerificationTab === 'aadhaar' ? 'bg-white text-[#0c0a09] shadow-xs' : 'text-[#78716c] hover:text-[#0c0a09]'
           }`}
         >
-          <ShieldCheck className="w-3.5 h-3.5 text-[#12B76A]" />
+          <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" />
           <span>Aadhaar (DigiLocker)</span>
         </button>
       </div>
@@ -91,17 +91,17 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
       {signupVerificationTab === 'aadhaar' && (
         <div>
           {aadhaarSuccess && aadhaarVerifiedData ? (
-            <div className="bg-[#ECFDF3] border border-[#12B76A]/30 rounded-2xl p-4 text-center space-y-3">
-              <div className="w-9 h-9 rounded-full bg-[#12B76A]/20 text-[#12B76A] flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-5 h-5 text-[#12B76A]" />
+            <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-2xl p-4 text-center space-y-3">
+              <div className="w-9 h-9 rounded-full bg-[#a7f3d0]/30 text-[#059669] flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-5 h-5 text-[#059669]" />
               </div>
               <div>
                 <div className="inline-flex items-center gap-1.5 mb-1">
                   <VerificationBadge type="aadhaar" status="VERIFIED" size="md" />
                 </div>
-                <h4 className="font-extrabold text-sm text-[#027A48]">✓ Aadhaar Verified</h4>
-                <p className="text-xs font-semibold text-[#171923] mt-1">Holder: {aadhaarVerifiedData.name}</p>
-                <p className="text-[11px] font-mono text-[#667085]">Aadhaar: {aadhaarVerifiedData.aadhaar_masked}</p>
+                <h4 className="font-bold text-sm text-[#065f46]">✓ Aadhaar Verified</h4>
+                <p className="text-xs font-semibold text-[#0c0a09] mt-1">Holder: {aadhaarVerifiedData.name}</p>
+                <p className="text-[11px] font-mono text-[#78716c]">Aadhaar: {aadhaarVerifiedData.aadhaar_masked}</p>
               </div>
               <Button
                 variant="success"
@@ -115,14 +115,14 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
             </div>
           ) : (
             <div className="space-y-3.5">
-              <div className="p-3 bg-[#F8F9FC] border border-[#E7E9EE] rounded-xl text-xs text-[#667085] flex items-center gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-[#635BFF] shrink-0" />
+              <div className="p-3 bg-[#fafafa] border border-[#e7e5e4] rounded-xl text-xs text-[#78716c] flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-[#0c0a09] shrink-0" />
                 <span>Verify your Aadhaar via DigiLocker to earn your <strong>Aadhaar Verified</strong> trust badge.</span>
               </div>
               {aadhaarError && (
-                <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-3 rounded-xl font-semibold">{aadhaarError}</p>
+                <div className="text-xs bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] p-3 rounded-xl font-medium">{aadhaarError}</div>
               )}
-              <label className="flex items-start gap-2 p-2.5 rounded-xl bg-[#F8F9FC] border border-[#E7E9EE] cursor-pointer text-xs text-[#667085]">
+              <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-[#e7e5e4] cursor-pointer text-xs text-[#78716c]">
                 <input
                   type="checkbox"
                   checked={aadhaarConsent}
@@ -130,7 +130,7 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
                     setAadhaarConsent(e.target.checked);
                     if (aadhaarError) setAadhaarError('');
                   }}
-                  className="mt-0.5 rounded border-[#D0D5DD] text-[#635BFF] focus:ring-[#635BFF]"
+                  className="mt-0.5 rounded border-[#d6d3d1] text-[#0c0a09] focus:ring-[#0c0a09]"
                 />
                 <span>
                   I authorize Collaborative Group Rewards to verify my Aadhaar identity via Surepass DigiLocker for rewards eligibility.
@@ -148,14 +148,14 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
               >
                 Verify Aadhaar & Get Badge
               </Button>
-              <div className="pt-2 text-center space-y-1.5 border-t border-[#E7E9EE]">
-                <p className="text-[11px] text-[#667085]">
+              <div className="pt-2 text-center space-y-1.5 border-t border-[#e7e5e4]">
+                <p className="text-[11px] text-[#78716c]">
                   This is optional. You can also verify your PAN or skip for now.
                 </p>
                 <button
                   type="button"
                   onClick={handleSkipSignupPan}
-                  className="text-xs font-bold text-[#635BFF] hover:underline py-1 cursor-pointer"
+                  className="text-xs font-semibold text-[#0c0a09] hover:underline py-1 cursor-pointer"
                 >
                   Skip for now →
                 </button>
@@ -169,17 +169,17 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
       {signupVerificationTab === 'pan' && (
         <div>
           {panSuccess && panVerifiedData ? (
-            <div className="bg-[#ECFDF3] border border-[#12B76A]/30 rounded-2xl p-4 text-center space-y-3">
-              <div className="w-9 h-9 rounded-full bg-[#12B76A]/20 text-[#12B76A] flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-5 h-5 text-[#12B76A]" />
+            <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-2xl p-4 text-center space-y-3">
+              <div className="w-9 h-9 rounded-full bg-[#a7f3d0]/30 text-[#059669] flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-5 h-5 text-[#059669]" />
               </div>
               <div>
                 <div className="inline-flex items-center gap-1.5 mb-1">
                   <VerificationBadge type="pan" status="VERIFIED" size="md" />
                 </div>
-                <h4 className="font-extrabold text-sm text-[#027A48]">✓ PAN Verified</h4>
-                <p className="text-xs font-semibold text-[#171923] mt-1">Name: {panVerifiedData.name}</p>
-                <p className="text-[11px] font-mono text-[#667085]">PAN: {panVerifiedData.pan_masked}</p>
+                <h4 className="font-bold text-sm text-[#065f46]">✓ PAN Verified</h4>
+                <p className="text-xs font-semibold text-[#0c0a09] mt-1">Name: {panVerifiedData.name}</p>
+                <p className="text-[11px] font-mono text-[#78716c]">PAN: {panVerifiedData.pan_masked}</p>
               </div>
               <Button
                 variant="success"
@@ -194,10 +194,10 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
           ) : (
             <form onSubmit={handleVerifySignupPan} className="space-y-3.5">
               {panError && (
-                <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-3 rounded-xl font-semibold">{panError}</p>
+                <div className="text-xs bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] p-3 rounded-xl font-medium">{panError}</div>
               )}
               <div>
-                <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#0c0a09] mb-1.5">
                   PAN Number
                 </label>
                 <input
@@ -209,9 +209,9 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
                   }}
                   placeholder="ABCDE1234A"
                   maxLength={10}
-                  className="w-full bg-[#F8F9FC] border border-[#E7E9EE] focus:border-[#635BFF] rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-wider text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF]"
+                  className="w-full bg-white border border-[#e7e5e4] focus:border-[#0c0a09] rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-wider text-[#0c0a09] focus:outline-none focus:ring-2 focus:ring-[#0c0a09]"
                 />
-                <p className="text-[10px] text-[#98A2B3] mt-1">
+                <p className="text-[10px] text-[#78716c] mt-1">
                   Format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234A)
                 </p>
               </div>
@@ -227,14 +227,14 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
                 Verify PAN
               </Button>
 
-              <div className="pt-2 text-center space-y-1.5 border-t border-[#E7E9EE]">
-                <p className="text-[11px] text-[#667085]">
+              <div className="pt-2 text-center space-y-1.5 border-t border-[#e7e5e4]">
+                <p className="text-[11px] text-[#78716c]">
                   This is optional. You can verify your PAN later from My Profile & Points.
                 </p>
                 <button
                   type="button"
                   onClick={handleSkipSignupPan}
-                  className="text-xs font-bold text-[#635BFF] hover:underline py-1 cursor-pointer"
+                  className="text-xs font-semibold text-[#0c0a09] hover:underline py-1 cursor-pointer"
                 >
                   Skip for now →
                 </button>

@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { kycApi } from '../../services/apiServices';
 import { extractErrorMessage } from '../../lib/api';
-import { mountDigiboostSdk } from './digiboostSdk';
+import {
+  preOpenAuthWindow,
+  openDigilockerInNewTab,
+  buildDigiboostUrl,
+} from './digiboostSdk';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -21,6 +25,128 @@ export function useAadhaarVerification() {
   const [success, setSuccess] = useState(false);
   const [verifiedData, setVerifiedData] = useState<AadhaarVerifiedPayload | null>(null);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [authorizationUrl, setAuthorizationUrl] = useState<string | null>(null);
+  const [isWaitingInNewTab, setIsWaitingInNewTab] = useState(false);
+
+  const pollTimerRef = useRef<ReturnType<typeof setInterval>>(null);
+  const cleanupTabRef = useRef<(() => void) | null>(null);
+  const activeWindowRef = useRef<Window | null>(null);
+
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  const cleanupSession = useCallback(() => {
+    stopPolling();
+    if (cleanupTabRef.current) {
+      cleanupTabRef.current();
+      cleanupTabRef.current = null;
+    }
+    setIsWaitingInNewTab(false);
+  }, [stopPolling]);
+
+  useEffect(() => {
+    return () => {
+      cleanupSession();
+    };
+  }, [cleanupSession]);
+
+  // Helper to confirm verification with backend
+  const confirmWithBackend = useCallback(
+    async (
+      clientId: string,
+      options?: { onSuccessCallback?: (data: AadhaarVerifiedPayload) => void }
+    ): Promise<boolean> => {
+      try {
+        const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
+        if (verifyRes.data.success) {
+          const confirmedPayload: AadhaarVerifiedPayload = {
+            masked_id: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
+            name: verifyRes.data.data?.registered_name || user?.name || 'Verified Citizen',
+            verified_at: verifyRes.data.data?.verified_at || new Date().toISOString(),
+          };
+
+          setSuccess(true);
+          setVerifiedData(confirmedPayload);
+          cleanupSession();
+
+          if (user) {
+            updateUser({
+              ...user,
+              aadhaar_verified: true,
+              aadhaar_masked: confirmedPayload.masked_id,
+              aadhaar_registered_name: confirmedPayload.name,
+              aadhaar_verified_at: confirmedPayload.verified_at,
+            });
+          }
+
+          showToast('Aadhaar verified successfully via DigiLocker! 🛡️', 'success');
+          if (options?.onSuccessCallback) {
+            options.onSuccessCallback(confirmedPayload);
+          }
+          setLoading(false);
+          return true;
+        } else {
+          // If still pending during background polling, do not fail immediately
+          return false;
+        }
+      } catch (confirmErr) {
+        loggerWarningOrError(confirmErr);
+        return false;
+      }
+    },
+    [cleanupSession, showToast, updateUser, user]
+  );
+
+  // Manual status check for user
+  const checkVerificationStatus = useCallback(
+    async (targetClientId?: string) => {
+      const cId = targetClientId || activeClientId;
+      if (!cId) {
+        setError('No active verification session to check.');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+      try {
+        const verifyRes = await kycApi.verifyAadhaar({ client_id: cId });
+        if (verifyRes.data.success) {
+          const confirmedPayload: AadhaarVerifiedPayload = {
+            masked_id: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
+            name: verifyRes.data.data?.registered_name || user?.name || 'Verified Citizen',
+            verified_at: verifyRes.data.data?.verified_at || new Date().toISOString(),
+          };
+
+          setSuccess(true);
+          setVerifiedData(confirmedPayload);
+          cleanupSession();
+
+          if (user) {
+            updateUser({
+              ...user,
+              aadhaar_verified: true,
+              aadhaar_masked: confirmedPayload.masked_id,
+              aadhaar_registered_name: confirmedPayload.name,
+              aadhaar_verified_at: confirmedPayload.verified_at,
+            });
+          }
+
+          showToast('Aadhaar verification confirmed! 🛡️', 'success');
+        } else {
+          setError(verifyRes.data.error || 'Verification is still pending. Please complete DigiLocker authorization.');
+        }
+      } catch (err) {
+        setError(extractErrorMessage(err));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeClientId, cleanupSession, showToast, updateUser, user]
+  );
 
   async function startVerification(options?: {
     redirectUrl?: string;
@@ -31,6 +157,10 @@ export function useAadhaarVerification() {
       setError('Please check the informed consent box to authorize DigiLocker verification.');
       return;
     }
+
+    // Pre-open blank tab synchronously in click event to ensure browser popup blockers do not block it
+    const preOpenedTab = preOpenAuthWindow();
+    activeWindowRef.current = preOpenedTab;
 
     setLoading(true);
     const callbackTarget = options?.redirectUrl || `${window.location.origin}/kyc/callback`;
@@ -43,6 +173,7 @@ export function useAadhaarVerification() {
       });
 
       if (!initRes.data.success) {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
         setError(initRes.data.error || 'Failed to initialize DigiLocker session with provider.');
         setLoading(false);
         return;
@@ -50,93 +181,101 @@ export function useAadhaarVerification() {
 
       const clientId = initRes.data.client_id;
       const sdkToken = initRes.data.token;
+      let authUrl = initRes.data.authorization_url;
+
       setActiveClientId(clientId);
 
-      // Helper to confirm verification with backend
-      const confirmWithBackend = async () => {
-        try {
-          const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
-          if (verifyRes.data.success) {
-            const confirmedPayload: AadhaarVerifiedPayload = {
-              masked_id: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
-              name: verifyRes.data.data?.registered_name || user?.name || 'Verified Citizen',
-              verified_at: verifyRes.data.data?.verified_at || new Date().toISOString(),
-            };
-
-            setSuccess(true);
-            setVerifiedData(confirmedPayload);
-
-            if (user) {
-              updateUser({
-                ...user,
-                aadhaar_verified: true,
-                aadhaar_masked: confirmedPayload.masked_id,
-                aadhaar_registered_name: confirmedPayload.name,
-                aadhaar_verified_at: confirmedPayload.verified_at,
-              });
-            }
-
-            showToast('Aadhaar verified successfully via DigiLocker! 🛡️', 'success');
-            if (options?.onSuccessCallback) {
-              options.onSuccessCallback(confirmedPayload);
-            }
-          } else {
-            setError(verifyRes.data.error || 'Aadhaar verification could not be confirmed by provider.');
-          }
-        } catch (confirmErr) {
-          setError(extractErrorMessage(confirmErr));
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      // 2. Launch Surepass Digiboost Web SDK
-      if (sdkToken && !sdkToken.startsWith('mock_')) {
-        try {
-          await mountDigiboostSdk({
-            token: sdkToken,
-            gateway: 'sandbox',
-            buttonTitle: 'Verify with DigiLocker',
-            onSuccess: async () => {
-              // Digiboost completed -> verify server-side
-              await confirmWithBackend();
-            },
-            onFailure: (err) => {
-              loggerWarningOrError(err);
-              setError(typeof err === 'string' ? err : 'DigiLocker verification was cancelled or failed.');
-              setLoading(false);
-            },
-          });
-          // Also set up window message listener for digilocker completion events
-          const messageListener = async (event: MessageEvent) => {
-            const data = event.data;
-            if (data?.type === 'digilocker:complete') {
-              window.removeEventListener('message', messageListener);
-              await confirmWithBackend();
-            } else if (data?.type === 'digilocker:failed') {
-              window.removeEventListener('message', messageListener);
-              setError('DigiLocker verification was cancelled or failed. Please retry.');
-              setLoading(false);
-            }
-          };
-          window.addEventListener('message', messageListener);
-        } catch {
-          // If popup is blocked or script error, fallback to URL or direct confirmation
-          if (initRes.data.authorization_url) {
-            window.open(initRes.data.authorization_url, '_blank');
-          }
-        }
-      } else {
-        // Simulated sandbox / demo mode fallback
-        await confirmWithBackend();
+      // 2. Mock mode handling
+      if (!sdkToken || sdkToken.startsWith('mock_')) {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+        await confirmWithBackend(clientId, options);
+        return;
       }
+
+      // 3. Build target DigiLocker verification URL if not full URL
+      if (!authUrl && sdkToken) {
+        authUrl = buildDigiboostUrl({
+          token: sdkToken,
+          gateway: 'sandbox',
+          origin: window.location.origin,
+        });
+      }
+
+      if (authUrl && !authUrl.includes('origin=')) {
+        const org = encodeURIComponent(window.location.origin);
+        const delim = authUrl.includes('?') ? '&' : '?';
+        authUrl = `${authUrl}${delim}origin=${org}`;
+      }
+
+      setAuthorizationUrl(authUrl);
+      setIsWaitingInNewTab(true);
+
+      // 4. Open in the pre-opened tab and attach postMessage listener
+      const { authWindow, cleanup } = openDigilockerInNewTab({
+        authorizationUrl: authUrl,
+        token: sdkToken,
+        gateway: 'sandbox',
+        windowRef: preOpenedTab,
+        onSuccess: async () => {
+          stopPolling();
+          await confirmWithBackend(clientId, options);
+        },
+        onFailure: async (failReason) => {
+          // If window was closed, do one quick confirmation attempt before declaring failure
+          const didVerify = await confirmWithBackend(clientId, options);
+          if (!didVerify) {
+            setError(typeof failReason === 'string' ? failReason : 'DigiLocker verification was cancelled.');
+            setIsWaitingInNewTab(false);
+            setLoading(false);
+          }
+        },
+      });
+
+      cleanupTabRef.current = cleanup;
+      activeWindowRef.current = authWindow;
+
+      // 5. Background Auto-Polling (checks every 3 seconds while new tab is open)
+      stopPolling();
+      let pollCount = 0;
+      const maxPolls = 100; // 5 minutes max
+
+      pollTimerRef.current = setInterval(async () => {
+        pollCount++;
+        if (pollCount > maxPolls) {
+          stopPolling();
+          setIsWaitingInNewTab(false);
+          setLoading(false);
+          return;
+        }
+
+        const isVerified = await confirmWithBackend(clientId, options);
+        if (isVerified) {
+          stopPolling();
+          if (activeWindowRef.current && !activeWindowRef.current.closed) {
+            try {
+              activeWindowRef.current.close();
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }, 3000);
     } catch (err) {
+      if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
       setError(extractErrorMessage(err));
       setLoading(false);
+      setIsWaitingInNewTab(false);
     }
   }
 
+  const reopenTab = useCallback(() => {
+    if (authorizationUrl) {
+      window.open(authorizationUrl, '_blank');
+    }
+  }, [authorizationUrl]);
+
   async function cancelVerification() {
+    cleanupSession();
     if (activeClientId) {
       try {
         await kycApi.cancelAadhaar({ client_id: activeClientId });
@@ -149,11 +288,13 @@ export function useAadhaarVerification() {
   }
 
   function resetState() {
+    cleanupSession();
     setLoading(false);
     setError('');
     setSuccess(false);
     setVerifiedData(null);
     setActiveClientId(null);
+    setAuthorizationUrl(null);
   }
 
   return {
@@ -164,7 +305,12 @@ export function useAadhaarVerification() {
     setConsent,
     success,
     verifiedData,
+    activeClientId,
+    authorizationUrl,
+    isWaitingInNewTab,
     startVerification,
+    checkVerificationStatus,
+    reopenTab,
     cancelVerification,
     resetState,
   };

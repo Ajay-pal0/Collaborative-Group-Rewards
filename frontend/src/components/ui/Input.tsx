@@ -26,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-xs font-bold text-[#667085] uppercase tracking-wider"
+          className="block text-xs font-semibold text-[#44403c] tracking-wide"
         >
           {label}
         </label>
@@ -34,7 +34,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
 
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-3.5 text-[#98A2B3] pointer-events-none flex items-center">
+          <div className="absolute left-3.5 text-[#a8a29e] pointer-events-none flex items-center">
             {icon}
           </div>
         )}
@@ -43,14 +43,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           id={inputId}
           ref={ref}
           disabled={disabled}
-          className={`w-full bg-[#F8F9FC] border rounded-xl py-2.5 text-sm text-[#171923] placeholder-[#98A2B3] transition-all focus:outline-none focus:ring-2 focus:ring-[#635BFF] disabled:bg-[#F2F4F7] disabled:text-[#667085] disabled:cursor-not-allowed ${
+          className={`w-full bg-[#fafafa] focus:bg-white border rounded-xl py-2.5 text-sm text-[#0c0a09] placeholder-[#a8a29e] transition-all focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:border-transparent disabled:bg-[#f5f5f4] disabled:text-[#78716c] disabled:cursor-not-allowed ${
             icon ? 'pl-10' : 'pl-3.5'
           } ${
             rightElement ? 'pr-11' : 'pr-3.5'
           } ${
             error
-              ? 'border-[#F04438] focus:border-[#F04438] focus:ring-[#F04438]/20'
-              : 'border-[#E7E9EE] focus:border-[#635BFF]'
+              ? 'border-[#dc2626] focus:ring-[#dc2626]/20'
+              : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
           } ${className}`}
           {...props}
         />
@@ -63,9 +63,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       </div>
 
       {error ? (
-        <p className="text-[#F04438] text-xs font-medium animate-fade-in">{error}</p>
+        <p className="text-[#dc2626] text-xs font-medium animate-fade-in">{error}</p>
       ) : helperText ? (
-        <p className="text-[11px] text-[#98A2B3]">{helperText}</p>
+        <p className="text-[11px] text-[#78716c]">{helperText}</p>
       ) : null}
     </div>
   );

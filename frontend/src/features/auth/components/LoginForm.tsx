@@ -1,6 +1,6 @@
-import React from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { Button, Input } from '../../../components/ui';
+import React, { useState } from 'react';
+import { Eye, EyeOff, Mail, Lock, CheckCircle, Zap, Shield, ArrowRight } from 'lucide-react';
+import { Button } from '../../../components/ui';
 
 interface LoginFormProps {
   loginEmail: string;
@@ -15,6 +15,7 @@ interface LoginFormProps {
   loginLoading: boolean;
   handleLogin: (e: React.FormEvent) => void;
   onForgotPassword: () => void;
+  onContinueDigiLocker?: () => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
@@ -30,83 +31,187 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   loginLoading,
   handleLogin,
   onForgotPassword,
+  onContinueDigiLocker,
 }) => {
+  const [rememberDays, setRememberDays] = useState(true);
+  const [copiedDemo, setCopiedDemo] = useState(false);
+
+  const handleAutofillDemo = () => {
+    setLoginEmail('ajaypal05192@gmail.com');
+    setLoginPassword('DemoPass@2025');
+    setLoginFieldErrors({});
+    setCopiedDemo(true);
+    setTimeout(() => setCopiedDemo(false), 2000);
+  };
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail);
+
   return (
-    <form onSubmit={handleLogin} noValidate className="space-y-4">
-      {loginError && (
-        <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-3 rounded-xl font-semibold">
-          {loginError}
-        </p>
-      )}
-
-      <div>
-        <Input
-          label="Email"
-          type="email"
-          value={loginEmail}
-          maxLength={254}
-          onChange={(e) => {
-            setLoginEmail(e.target.value);
-            setLoginFieldErrors((p) => ({ ...p, email: '' }));
-          }}
-          placeholder="ajay.pal@example.com"
-          error={loginFieldErrors.email}
-        />
+    <div className="space-y-4">
+      {/* Demo Account Callout */}
+      <div className="p-3 rounded-xl bg-[#f5f5f4] border border-[#e7e5e4] flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <Zap className="w-4 h-4 text-[#b4552d] shrink-0" />
+          <div className="truncate">
+            <span className="font-semibold text-[#0c0a09]">Quick Demo: </span>
+            <span className="text-[#78716c] font-mono">ajaypal05192@gmail.com</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleAutofillDemo}
+          className="text-[#b4552d] hover:text-[#9a4420] font-bold text-xs flex items-center gap-1 shrink-0 pl-2 cursor-pointer transition-colors"
+        >
+          {copiedDemo ? (
+            <span className="text-[#059669] flex items-center gap-0.5">
+              <CheckCircle className="w-3.5 h-3.5" /> Filled!
+            </span>
+          ) : (
+            <span>Fill Demo</span>
+          )}
+        </button>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider">
-            Password
-          </label>
-          <button
-            type="button"
-            onClick={onForgotPassword}
-            className="text-xs font-semibold text-[#635BFF] hover:underline cursor-pointer"
-          >
-            Forgot password?
-          </button>
-        </div>
-
-        <div className="relative">
-          <input
-            type={showLoginPassword ? 'text' : 'password'}
-            value={loginPassword}
-            maxLength={128}
-            onChange={(e) => {
-              setLoginPassword(e.target.value);
-              setLoginFieldErrors((p) => ({ ...p, password: '' }));
-            }}
-            placeholder="••••••••"
-            className={`w-full bg-[#F8F9FC] border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-              loginFieldErrors.password ? 'border-[#F04438]' : 'border-[#E7E9EE]'
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => setShowLoginPassword(!showLoginPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3] hover:text-[#171923] transition-colors cursor-pointer p-1"
-            aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
-          >
-            {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-        {loginFieldErrors.password && (
-          <p className="text-[#F04438] text-xs mt-1 font-medium">{loginFieldErrors.password}</p>
+      <form onSubmit={handleLogin} noValidate className="space-y-4">
+        {loginError && (
+          <div className="text-xs bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] p-3 rounded-xl font-medium animate-fade-in">
+            {loginError}
+          </div>
         )}
+
+        {/* Email Field */}
+        <div>
+          <label className="block text-xs font-semibold text-[#0c0a09] mb-1.5" htmlFor="login-email">
+            Email Address
+          </label>
+          <div className="relative rounded-xl">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#78716c]">
+              <Mail className="w-4 h-4" />
+            </div>
+            <input
+              id="login-email"
+              type="email"
+              value={loginEmail}
+              maxLength={254}
+              onChange={(e) => {
+                setLoginEmail(e.target.value);
+                setLoginFieldErrors((p) => ({ ...p, email: '' }));
+              }}
+              placeholder="you@tribewealth.in"
+              className={`block w-full pl-10 pr-10 py-2.5 bg-[#f8fafc] border rounded-xl text-[#0c0a09] text-sm placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white transition-all ${
+                loginFieldErrors.email ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
+              }`}
+            />
+            {isEmailValid && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#059669]">
+                <CheckCircle className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+          {loginFieldErrors.email && (
+            <p className="text-[#dc2626] text-xs mt-1 font-medium">{loginFieldErrors.email}</p>
+          )}
+        </div>
+
+        {/* Password Field */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-semibold text-[#0c0a09]" htmlFor="login-password">
+              Password
+            </label>
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-xs font-medium text-[#b4552d] hover:text-[#9a4420] hover:underline cursor-pointer transition-colors"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          <div className="relative rounded-xl">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#78716c]">
+              <Lock className="w-4 h-4" />
+            </div>
+            <input
+              id="login-password"
+              type={showLoginPassword ? 'text' : 'password'}
+              value={loginPassword}
+              maxLength={128}
+              onChange={(e) => {
+                setLoginPassword(e.target.value);
+                setLoginFieldErrors((p) => ({ ...p, password: '' }));
+              }}
+              placeholder="••••••••••••"
+              className={`block w-full pl-10 pr-10 py-2.5 bg-[#f8fafc] border rounded-xl text-[#0c0a09] text-sm placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white transition-all ${
+                loginFieldErrors.password ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowLoginPassword(!showLoginPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#78716c] hover:text-[#0c0a09] cursor-pointer"
+              aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+            >
+              {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          {loginFieldErrors.password && (
+            <p className="text-[#dc2626] text-xs mt-1 font-medium">{loginFieldErrors.password}</p>
+          )}
+        </div>
+
+        {/* Remember Checkbox */}
+        <div className="flex items-center justify-between pt-1">
+          <label className="flex items-center cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={rememberDays}
+              onChange={(e) => setRememberDays(e.target.checked)}
+              className="h-4 w-4 rounded border-[#e7e5e4] text-[#0c0a09] focus:ring-[#0c0a09] accent-[#0c0a09]"
+            />
+            <span className="ml-2 text-xs text-[#78716c] font-medium">Remember 30 days</span>
+          </label>
+        </div>
+
+        {/* Primary CTA */}
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          loading={loginLoading}
+          disabled={loginLoading}
+          className="w-full flex items-center justify-center gap-2 shadow-xs"
+        >
+          <span>Sign In to Account</span>
+          <ArrowRight className="w-4 h-4" />
+        </Button>
+      </form>
+
+      {/* Alternative Divider */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#e7e5e4]"></div>
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-3 text-[#78716c]">or continue with verified credentials</span>
+        </div>
       </div>
 
-      <Button
-        type="submit"
-        variant="primary"
-        size="md"
-        loading={loginLoading}
-        disabled={loginLoading}
-        className="w-full"
+      {/* DigiLocker Direct Auth Button */}
+      <button
+        type="button"
+        onClick={onContinueDigiLocker || handleAutofillDemo}
+        className="w-full border border-[#e7e5e4] bg-[#f8fafc] hover:bg-[#f1f5f9] text-[#0c0a09] transition-colors rounded-xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-2.5 cursor-pointer shadow-2xs"
       >
-        Sign In
-      </Button>
-    </form>
+        <Shield className="w-4 h-4 text-[#10b981]" />
+        <span>Continue with DigiLocker / Aadhaar ID</span>
+      </button>
+
+      {/* Disclaimer */}
+      <p className="text-[11px] text-[#78716c] text-center leading-relaxed pt-2">
+        By signing in, you agree to our Terms of Service & Privacy Policy. Governed by RBI Information Security Guidelines.
+      </p>
+    </div>
   );
 };
 

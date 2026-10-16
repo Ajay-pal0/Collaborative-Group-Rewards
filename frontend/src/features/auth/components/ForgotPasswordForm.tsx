@@ -26,13 +26,13 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   return (
     <div className="space-y-4">
       <div className="text-center space-y-1">
-        <div className="w-10 h-10 rounded-2xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mx-auto mb-1.5">
-          <KeyRound className="w-5 h-5 text-[#635BFF]" />
+        <div className="w-10 h-10 rounded-2xl bg-[#0c0a09]/5 text-[#0c0a09] flex items-center justify-center mx-auto mb-1.5 border border-[#e7e5e4]">
+          <KeyRound className="w-5 h-5 text-[#0c0a09]" />
         </div>
-        <h3 className="text-base font-extrabold text-[#171923]">
+        <h3 className="text-base font-bold text-[#0c0a09]">
           {forgotSuccess ? 'Check Your Inbox' : 'Forgot Password'}
         </h3>
-        <p className="text-xs text-[#667085]">
+        <p className="text-xs text-[#78716c]">
           {forgotSuccess
             ? 'A password reset link has been dispatched.'
             : 'Enter your registered email address to receive a secure reset link.'}
@@ -42,9 +42,9 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
       {!forgotSuccess ? (
         <form onSubmit={handleForgotPassword} noValidate className="space-y-4">
           {forgotError && (
-            <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-3 rounded-xl font-semibold">
+            <div className="text-xs bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] p-3 rounded-xl font-medium">
               {forgotError}
-            </p>
+            </div>
           )}
 
           <div>
@@ -57,7 +57,8 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
                 setForgotEmail(e.target.value);
                 if (forgotError) setForgotError('');
               }}
-              placeholder="ajay.pal@example.com"
+              placeholder="name@example.com"
+              required
             />
           </div>
 
@@ -72,11 +73,11 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
             Send Reset Link
           </Button>
 
-          <div className="pt-2 text-center border-t border-[#E7E9EE]">
+          <div className="pt-2 text-center border-t border-[#e7e5e4]">
             <button
               type="button"
               onClick={handleBackToLogin}
-              className="text-xs font-semibold text-[#635BFF] hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#0c0a09] hover:underline cursor-pointer"
             >
               ← Back to Sign In
             </button>
@@ -84,16 +85,16 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="bg-[#ECFDF3] border border-[#12B76A]/30 rounded-2xl p-5 text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-[#12B76A]/20 text-[#12B76A] flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-6 h-6 text-[#12B76A]" />
+          <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-2xl p-5 text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-[#a7f3d0]/40 text-[#059669] flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-6 h-6 text-[#059669]" />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-[#027A48]">Password Reset Email Sent</h4>
-              <p className="text-xs text-[#667085] mt-1.5 leading-relaxed">
+              <h4 className="font-bold text-sm text-[#065f46]">Password Reset Email Sent</h4>
+              <p className="text-xs text-[#065f46] mt-1.5 leading-relaxed">
                 {forgotSuccess}
               </p>
-              <p className="text-[11px] text-[#98A2B3] mt-2">
+              <p className="text-[11px] text-[#78716c] mt-2">
                 The reset link is valid for <strong>20 minutes</strong>.
               </p>
             </div>

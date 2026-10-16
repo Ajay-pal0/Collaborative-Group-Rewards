@@ -179,6 +179,7 @@ class SurepassIntegrationService:
         # Surepass Cloudflare/Imperva WAF rejects requests containing 'localhost', '127.0.0.1',
         # or private IP ranges with HTTP 403 Forbidden to prevent SSRF vulnerabilities.
         # Only attach redirect_url / callback_url when it points to a public, non-loopback domain.
+        origin = None
         if redirect_url:
             cleaned_url = str(redirect_url).strip()
             lower_url = cleaned_url.lower()
@@ -189,6 +190,14 @@ class SurepassIntegrationService:
             if not is_loopback and (lower_url.startswith('https://') or lower_url.startswith('http://')):
                 payload['data']['redirect_url'] = cleaned_url
                 payload['callback_url'] = cleaned_url
+
+            from urllib.parse import urlparse
+            try:
+                parsed = urlparse(cleaned_url)
+                if parsed.scheme and parsed.netloc:
+                    origin = f"{parsed.scheme}://{parsed.netloc}"
+            except Exception:
+                pass
 
         logger.info("Initiating Surepass DigiLocker SDK flow | URL: %s", url)
 
@@ -248,6 +257,16 @@ class SurepassIntegrationService:
         client_id = str(data.get('client_id') or data.get('token') or '')
         token = str(data.get('token') or '')
         expiry_seconds = float(data.get('expiry_seconds') or 600.0)
+        gateway = 'sandbox' if 'sandbox' in self.base_url else 'production'
+
+        if not auth_url and token:
+            auth_url = f'https://digilocker-sdk.notbot.in/?gateway={gateway}&type=digilocker&token={token}&auth_type=web'
+
+        # Ensure origin parameter is present so digilocker-sdk.notbot.in can safely postMessage to window.opener
+        if origin and auth_url and 'origin=' not in auth_url:
+            import urllib.parse
+            delim = '&' if '?' in auth_url else '?'
+            auth_url = f"{auth_url}{delim}origin={urllib.parse.quote(origin)}"
 
         return {
             'success': True,
@@ -259,9 +278,10 @@ class SurepassIntegrationService:
             'response': response,
         }
 
-    def fetch_digilocker_status(self, client_id: str) -> dict[str, Any]:
+    def download_aadhaar(self, client_id: str) -> dict[str, Any]:
         """
-        Fetches DigiLocker Aadhaar verification outcome using client_id / session.
+        Calls Surepass Download Aadhaar XML API (GET /api/v1/digilocker/download-aadhaar/{client_id}).
+        Official endpoint for post-verification Aadhaar XML and metadata download.
         """
         if not client_id:
             return {
@@ -270,8 +290,41 @@ class SurepassIntegrationService:
                 'status_code': 400,
             }
 
+        url = f'{self.base_url}/api/v1/digilocker/download-aadhaar/{client_id}'
+        logger.info("Calling Surepass Download Aadhaar for client_id: %s | URL: %s", client_id, url)
+
+        response: ExternalApiResponse = self.client.execute(
+            provider=self.PROVIDER,
+            api_name='digilocker_download_aadhaar',
+            method='GET',
+            url=url,
+            headers=self._get_auth_headers(),
+            timeout=getattr(settings, 'SUREPASS_TIMEOUT', 15),
+        )
+
+        return self._normalize_digilocker_outcome(client_id, response)
+
+    def fetch_digilocker_status(self, client_id: str) -> dict[str, Any]:
+        """
+        Fetches DigiLocker Aadhaar verification outcome using client_id / session.
+        Tries download-aadhaar endpoint first (per Surepass documentation),
+        with fallback to status endpoint.
+        """
+        if not client_id:
+            return {
+                'success': False,
+                'error': 'DigiLocker client_id is required.',
+                'status_code': 400,
+            }
+
+        # 1. First attempt download-aadhaar as per Surepass documentation
+        download_res = self.download_aadhaar(client_id)
+        if download_res.get('success'):
+            return download_res
+
+        # 2. Fallback to status/{client_id}
         url = f'{self.base_url}/api/v1/digilocker/status/{client_id}'
-        logger.info("Fetching Surepass DigiLocker status for client_id: %s", client_id)
+        logger.info("Falling back to Surepass DigiLocker status for client_id: %s", client_id)
 
         response: ExternalApiResponse = self.client.execute(
             provider=self.PROVIDER,
@@ -282,6 +335,12 @@ class SurepassIntegrationService:
             timeout=getattr(settings, 'SUREPASS_TIMEOUT', 15),
         )
 
+        return self._normalize_digilocker_outcome(client_id, response)
+
+    def _normalize_digilocker_outcome(self, client_id: str, response: ExternalApiResponse) -> dict[str, Any]:
+        """
+        Normalizes DigiLocker API response from either download-aadhaar or status endpoints.
+        """
         # Simulated sandbox fallback
         if (response.status_code in (401, 403, 404) or not response.is_success) and (
             self.token.startswith('mock_') or 'mock' in client_id or 'demo' in self.token
@@ -308,27 +367,58 @@ class SurepassIntegrationService:
             return {
                 'success': False,
                 'error': provider_err or 'DigiLocker document retrieval failed.',
-                'status_code': 400,
+                'status_code': response.status_code or 400,
                 'response': response,
             }
 
         data = response.data.get('data') or response.data
+        if not isinstance(data, dict):
+            return {
+                'success': False,
+                'error': 'Invalid data received from DigiLocker provider.',
+                'status_code': 400,
+                'response': response,
+            }
+
+        xml_data = data.get('aadhaar_xml_data') or {}
+        digilocker_meta = data.get('digilocker_metadata') or {}
+
         full_name = (
-            data.get('full_name')
+            xml_data.get('full_name')
+            or digilocker_meta.get('name')
+            or data.get('full_name')
             or data.get('name')
             or ''
         ).strip()
-        raw_aadhaar = str(data.get('aadhaar_number') or data.get('uid') or data.get('id_number') or '')
+
+        raw_aadhaar = str(
+            xml_data.get('masked_aadhaar')
+            or data.get('aadhaar_number')
+            or data.get('uid')
+            or data.get('id_number')
+            or ''
+        ).strip()
+
+        if raw_aadhaar and not raw_aadhaar.startswith('X') and not raw_aadhaar.startswith('x'):
+            masked_id = mask_aadhaar(raw_aadhaar)
+        else:
+            masked_id = raw_aadhaar or 'XXXXXXXX9999'
+
+        combined_metadata = {
+            'dob': xml_data.get('dob') or digilocker_meta.get('dob') or data.get('dob', ''),
+            'gender': xml_data.get('gender') or digilocker_meta.get('gender') or data.get('gender', ''),
+            'care_of': xml_data.get('care_of', ''),
+            'address': xml_data.get('address') or xml_data.get('full_address', ''),
+            'zip': xml_data.get('zip', ''),
+            'xml_url': data.get('xml_url', ''),
+        }
 
         return {
             'success': True,
             'provider_reference': client_id,
-            'masked_id': mask_aadhaar(raw_aadhaar) if raw_aadhaar else 'XXXXXXXX9999',
+            'masked_id': masked_id,
             'full_name': full_name or 'Verified Aadhaar Holder',
-            'metadata': {
-                'dob': data.get('dob', ''),
-                'gender': data.get('gender', ''),
-            },
+            'metadata': combined_metadata,
             'status_code': 200,
             'response': response,
         }

@@ -9,8 +9,14 @@ from apps.kyc.models import (
     VerificationConsent,
     VerificationStatus,
     VerificationType,
+    VerificationAttempt,
 )
-from apps.credit.models import CreditReport, CreditReportStatus
+from apps.credit.models import (
+    CreditReport,
+    CreditReportStatus,
+    CreditReportRequest,
+    CreditRequestType,
+)
 
 
 def make_user(email='kyc_user@example.com', name='KYC Test User', password='password123'):
@@ -219,3 +225,96 @@ class CreditEndpointsTest(TestCase):
         consent_entry = VerificationConsent.objects.filter(user=self.user, verification_type='CREDIT').first()
         self.assertIsNotNone(consent_entry)
         self.assertTrue(consent_entry.consent_given)
+
+    @patch('apps.credit.services.cibil_service.CibilIntegrationService.fetch_cibil_score')
+    def test_cibil_score_endpoint_success(self, mock_fetch):
+        mock_fetch.return_value = {
+            'success': True,
+            'client_id': 'cibil_score_mock_999',
+            'credit_score': 765,
+            'score_band': 'Very Good',
+            'status_code': 200,
+        }
+
+        resp = self.client.post('/api/v1/credit/score/', {'consent': True, 'pan': 'ABCPD1234F'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.data['success'])
+        self.assertEqual(resp.data['credit_score'], 765)
+        self.assertEqual(resp.data['score_band'], 'Very Good')
+
+        # Verify CreditReportRequest was logged
+        req = CreditReportRequest.objects.filter(user=self.user, request_type=CreditRequestType.SCORE).first()
+        self.assertIsNotNone(req)
+        self.assertEqual(req.status, 'COMPLETED')
+        self.assertEqual(req.provider_client_reference, 'cibil_score_mock_999')
+
+        # Verify CreditReport record
+        report = CreditReport.objects.get(user=self.user)
+        self.assertEqual(report.credit_score, 765)
+        self.assertEqual(report.request, req)
+
+    @patch('apps.credit.services.cibil_service.CibilIntegrationService.fetch_detailed_report')
+    def test_cibil_full_report_endpoint_success_and_get(self, mock_fetch):
+        mock_fetch.return_value = {
+            'success': True,
+            'client_id': 'cibil_report_mock_888',
+            'credit_score': 780,
+            'score_band': 'Very Good',
+            'account_summary': {
+                'total_accounts': 2,
+                'current_balance': 15000.0,
+                'high_credit_amount': 50000.0,
+                'overdue_account_count': 0,
+                'overdue_balance': 0.0,
+                'zero_balance_account_count': 1,
+            },
+            'inquiry_summary': {
+                'total_enquiries': 1,
+                'recent_inquiry_date': '2026-08-01',
+            },
+            'accounts': [
+                {
+                    'account_type': 'Credit Card',
+                    'masked_account_number': 'XXXXXXXX1234',
+                    'lender_name': 'HDFC Bank',
+                    'current_balance': 15000.0,
+                    'overdue_amount': 0.0,
+                    'high_credit_amount': 50000.0,
+                    'payment_history': [{'month': '2026-09', 'status': '000'}],
+                }
+            ],
+            'enquiries': [
+                {
+                    'institution': 'HDFC Bank',
+                    'purpose': 'Credit Card',
+                    'amount': 50000.0,
+                    'date': '2026-08-01',
+                }
+            ],
+            'status_code': 200,
+        }
+
+        resp = self.client.post('/api/v1/credit/full-report/', {'consent': True, 'pan': 'EKRPR1234F'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.data['success'])
+        self.assertTrue(resp.data['has_full_report'])
+        self.assertEqual(resp.data['credit_score'], 780)
+        self.assertEqual(len(resp.data['accounts']), 1)
+        self.assertEqual(resp.data['accounts'][0]['masked_account_number'], 'XXXXXXXX1234')
+
+        # Verify GET /api/v1/credit/full-report/
+        get_resp = self.client.get('/api/v1/credit/full-report/')
+        self.assertEqual(get_resp.status_code, 200)
+        self.assertTrue(get_resp.data['success'])
+        self.assertEqual(get_resp.data['credit_score'], 780)
+        self.assertEqual(len(get_resp.data['accounts']), 1)
+
+    def test_other_user_cannot_access_credit_report(self):
+        other_user = make_user('other_credit@example.com')
+        other_client = APIClient()
+        other_client.force_authenticate(user=other_user)
+
+        # Other user has no report yet
+        resp = other_client.get('/api/v1/credit/full-report/')
+        self.assertEqual(resp.status_code, 404)
+

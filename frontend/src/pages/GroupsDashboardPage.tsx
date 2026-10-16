@@ -12,7 +12,6 @@ import {
   Sparkles,
   UsersRound,
   Gift,
-  Zap,
   User,
   Check,
   Bell,
@@ -67,7 +66,6 @@ export default function GroupsDashboardPage() {
     activities,
     completedTaskIds,
     loadingGroups,
-    loadingDetails,
     completingTaskId,
     unlockedBenefit,
     setUnlockedBenefit,
@@ -120,87 +118,139 @@ export default function GroupsDashboardPage() {
   const userName = user?.name || 'User';
 
   return (
-    <div className="min-h-screen bg-[#F8F9FC] text-[#171923] flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f5] text-[#0c0a09] flex flex-col">
       {/* Top Header Bar */}
-      <header className="bg-white border-b border-[#E7E9EE] px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+      <header className="bg-white/95 backdrop-blur-md border-b border-[#e7e5e4] px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-4 sm:gap-6">
           {/* App Brand Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white flex items-center justify-center shadow-sm">
-              <Sparkles className="w-5 h-5 fill-white/20" />
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/groups')}>
+            <div className="w-8 h-8 rounded-xl bg-[#0c0a09] text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4 fill-white/20 text-[#ffdcc3]" />
             </div>
-            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#171923] hidden xs:inline">
-              Collaborative Group Rewards
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#0c0a09] hidden xs:inline">
+              TribeWealth
             </span>
           </div>
 
-          <div className="h-6 w-px bg-[#E7E9EE]" />
+          {/* Desktop Nav Links */}
+          <nav className="hidden lg:flex items-center gap-1.5 pl-2">
+            <button
+              onClick={() => navigate('/groups')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#0c0a09] text-white transition-all cursor-pointer"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => navigate('/credit')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] hover:bg-[#f5f5f4] transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>CIBIL Credit</span>
+            </button>
+            <button
+              onClick={() => navigate('/profile')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] hover:bg-[#f5f5f4] transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Profile & KYC</span>
+            </button>
+          </nav>
+
+          <div className="h-6 w-px bg-[#e7e5e4] hidden sm:block" />
 
           {/* Active Group Selector Dropdown */}
           <div className="relative" ref={groupDropdownRef}>
-            <button
-              onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
-              className="flex items-center gap-3 p-1.5 pl-2 pr-3 rounded-2xl bg-white border border-[#E7E9EE] hover:border-[#635BFF]/40 hover:shadow-xs transition-all cursor-pointer text-left"
-            >
-              <div className="w-9 h-9 rounded-xl bg-[#635BFF]/10 text-[#635BFF] font-bold flex items-center justify-center border border-[#635BFF]/20 shrink-0">
-                {selectedGroup?.name ? selectedGroup.name.charAt(0).toUpperCase() : <UsersRound className="w-4 h-4" />}
-              </div>
-              <div className="hidden sm:block">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-xs text-[#171923] max-w-[140px] truncate">
-                    {selectedGroup?.name || 'Select Group'}
-                  </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-[#667085] transition-transform duration-200 ${groupDropdownOpen ? 'rotate-180' : ''}`} />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
+                className="flex items-center gap-2.5 p-1.5 pl-2 pr-3 rounded-full bg-[#f5f5f4] border border-[#e7e5e4] hover:border-[#d6d3d1] hover:shadow-xs transition-all cursor-pointer text-left"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#0c0a09] text-white font-bold flex items-center justify-center text-xs shrink-0">
+                  {selectedGroup?.name ? selectedGroup.name.charAt(0).toUpperCase() : <UsersRound className="w-3.5 h-3.5" />}
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#667085]">
-                  <span className="capitalize">{selectedGroup?.group_type || 'Group'}</span>
-                  <span>•</span>
-                  <span className="font-bold text-[#635BFF]">{selectedGroup?.total_points || 0} pts</span>
+                <div className="hidden sm:block">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-[#0c0a09] max-w-[140px] truncate">
+                      {selectedGroup?.name || 'Select Group'}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 text-[#78716c] transition-transform duration-200 ${groupDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#78716c]">
+                    <span className="capitalize">{selectedGroup?.group_type || 'Group'}</span>
+                    <span>•</span>
+                    <span className="font-bold text-[#0c0a09]">{selectedGroup?.total_points || 0} pts</span>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
+                className="hidden lg:inline-flex text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] px-2.5 py-1.5 hover:bg-[#f5f5f4] rounded-lg transition-colors cursor-pointer"
+              >
+                Switch Group
+              </button>
+            </div>
 
             {/* Dropdown Menu */}
             {groupDropdownOpen && (
-              <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#E7E9EE] p-2 z-30 animate-slide-up">
-                <div className="px-3 py-2 text-[10px] font-bold text-[#98A2B3] uppercase tracking-wider">
-                  Your Groups ({groups.length})
+              <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#e7e5e4] p-2 z-30 animate-slide-up">
+                <div className="px-3 py-2 text-[10px] font-bold text-[#78716c] uppercase tracking-wider flex items-center justify-between">
+                  <span>Your Groups</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#f5f5f4] text-[#78716c]">
+                    {groups.length}
+                  </span>
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-1">
-                  {groups.map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => {
-                        selectGroup(g);
-                        setGroupDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                        selectedGroup?.id === g.id
-                          ? 'bg-[#635BFF]/10 text-[#635BFF] font-bold'
-                          : 'hover:bg-[#F8F9FC] text-[#171923]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                        <div className="w-7 h-7 rounded-lg bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-bold text-xs shrink-0">
-                          {g.name.charAt(0).toUpperCase()}
+                  {groups.map((g) => {
+                    const isSelected = selectedGroup?.id === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          selectGroup(g);
+                          setGroupDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#f5f5f4] border border-[#e7e5e4] text-[#0c0a09] font-bold shadow-2xs'
+                            : 'hover:bg-[#fafaf9] border border-transparent text-[#44403c]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                          <div
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                              isSelected
+                                ? 'bg-[#0c0a09] text-white shadow-2xs'
+                                : 'bg-[#e7e5e4]/60 text-[#78716c]'
+                            }`}
+                          >
+                            {g.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="truncate">{g.name}</span>
                         </div>
-                        <span className="truncate">{g.name}</span>
-                      </div>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#ECFDF3] text-[#12B76A] shrink-0">
-                        {g.total_points} pts
-                      </span>
-                    </button>
-                  ))}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                              isSelected
+                                ? 'bg-[#fff1eb] text-[#b4552d] border border-[#fed7aa]'
+                                : 'bg-[#f5f5f4] text-[#78716c]'
+                            }`}
+                          >
+                            {g.total_points} pts
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#059669] shrink-0" />}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="pt-2 border-t border-[#E7E9EE] mt-1">
+                <div className="pt-2 border-t border-[#e7e5e4] mt-1">
                   <button
                     onClick={() => {
                       setGroupDropdownOpen(false);
                       setCreateModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-bold text-[#635BFF] hover:bg-[#635BFF]/5 transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-bold text-[#0c0a09] hover:bg-[#f5f5f4] transition-colors cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-[#78716c]" />
                     <span>Create New Group</span>
                   </button>
                 </div>
@@ -213,40 +263,49 @@ export default function GroupsDashboardPage() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => showToast('Group Rewards Notification', 'info')}
-            className="w-9 h-9 rounded-xl border border-[#E7E9EE] hover:bg-[#F8F9FC] text-[#667085] flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full border border-[#e7e5e4] hover:bg-[#f5f5f4] text-[#78716c] flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Notifications"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-3.5 h-3.5" />
           </button>
 
           {selectedGroup && (
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setInviteModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#635BFF] hover:bg-[#4F46E5] text-white shadow-xs transition-all cursor-pointer"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              className="hidden sm:inline-flex"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Invite (+25 pts)</span>
-            </button>
+              Invite (+25 pts)
+            </Button>
           )}
 
           {/* User Profile Menu */}
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 p-1.5 rounded-2xl hover:bg-[#F8F9FC] border border-transparent hover:border-[#E7E9EE] transition-all cursor-pointer"
+              className="flex items-center gap-2 p-1.5 rounded-full hover:bg-[#f5f5f4] border border-transparent hover:border-[#e7e5e4] transition-all cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-[#0c0a09] text-white font-bold text-xs flex items-center justify-center shadow-xs">
                 {userName.charAt(0).toUpperCase()}
               </div>
-              <ChevronDown className={`w-3.5 h-3.5 text-[#667085] transition-transform duration-200 hidden sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-[#78716c] transition-transform duration-200 hidden sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#E7E9EE] p-2 z-30 animate-slide-up">
-                <div className="p-3 border-b border-[#E7E9EE]">
-                  <p className="font-extrabold text-xs text-[#171923] truncate">{userName}</p>
-                  <p className="text-[10px] text-[#667085] truncate mt-0.5">{user?.email}</p>
-                  <div className="flex gap-1 mt-2">
+              <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#e7e5e4] p-2 z-30 animate-slide-up">
+                <div className="p-3 border-b border-[#e7e5e4]">
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#0c0a09] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-extrabold text-xs text-[#0c0a09] truncate">{userName}</p>
+                      <p className="text-[10px] text-[#78716c] truncate">{user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <VerificationBadge type="pan" status={user?.pan_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
                     <VerificationBadge type="aadhaar" status={user?.aadhaar_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
                   </div>
@@ -256,30 +315,52 @@ export default function GroupsDashboardPage() {
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
+                      navigate('/profile');
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-[#0c0a09] hover:bg-[#f5f5f4] transition-colors cursor-pointer text-left"
+                  >
+                    <User className="w-4 h-4 text-[#78716c]" />
+                    <span>Dedicated Profile & KYC Page</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate('/credit');
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-[#0c0a09] hover:bg-[#f5f5f4] transition-colors cursor-pointer text-left"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-[#059669]" />
+                    <span>CIBIL Credit Intelligence Page</span>
+                  </button>
+                  <div className="my-1 border-t border-[#f5f5f4]" />
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
                       setProfileModalTab('overview');
                       setProfileModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#171923] hover:bg-[#F8F9FC] transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-medium text-[#78716c] hover:bg-[#f5f5f4] hover:text-[#0c0a09] transition-colors cursor-pointer text-left"
                   >
-                    <User className="w-4 h-4 text-[#667085]" />
-                    <span>My Profile & Points</span>
+                    <User className="w-4 h-4 text-[#a8a29e]" />
+                    <span>Quick Profile Modal</span>
                   </button>
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
                       setCreditModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#171923] hover:bg-[#F8F9FC] transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-medium text-[#78716c] hover:bg-[#f5f5f4] hover:text-[#0c0a09] transition-colors cursor-pointer text-left"
                   >
-                    <ShieldCheck className="w-4 h-4 text-[#12B76A]" />
-                    <span>Credit & Financial</span>
+                    <ShieldCheck className="w-4 h-4 text-[#a8a29e]" />
+                    <span>Quick Credit Modal</span>
                   </button>
+                  <div className="my-1 border-t border-[#e7e5e4]" />
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
                       logout();
                     }}
-                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#F04438] hover:bg-[#FEF3F2] transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-[#dc2626] hover:bg-[#fef2f2] transition-colors cursor-pointer text-left"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
@@ -304,13 +385,13 @@ export default function GroupsDashboardPage() {
           </div>
         ) : groups.length === 0 ? (
           /* Empty State */
-          <div className="bg-white border border-[#E7E9EE] rounded-3xl p-12 text-center max-w-xl mx-auto space-y-5 my-12 shadow-sm animate-fade-in">
-            <div className="w-16 h-16 bg-[#635BFF]/10 text-[#635BFF] rounded-2xl flex items-center justify-center mx-auto">
-              <Sparkles className="w-8 h-8" />
+          <div className="bg-white border border-[#e7e5e4] rounded-3xl p-12 text-center max-w-xl mx-auto space-y-5 my-12 shadow-sm animate-fade-in">
+            <div className="w-16 h-16 bg-[#fafafa] border border-[#e7e5e4] text-[#0c0a09] rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+              <Sparkles className="w-8 h-8 text-[#b4552d]" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-[#171923]">Welcome to Collaborative Group Rewards</h2>
-              <p className="text-[#667085] text-xs max-w-md mx-auto leading-relaxed">
+              <h2 className="text-2xl font-bold text-[#0c0a09]">Welcome to TribeWealth</h2>
+              <p className="text-[#78716c] text-xs max-w-md mx-auto leading-relaxed">
                 Start your journey by creating a private group or joining one with an invite token.
               </p>
             </div>
@@ -339,6 +420,8 @@ export default function GroupsDashboardPage() {
               pointsToGo={pointsToGo}
               progressPercent={progressPercent}
               userPointsData={userPointsData}
+              userName={userName}
+              onRedeemPerks={() => setBenefitsModalOpen(true)}
             />
 
             {/* Identity & Verification Banner */}
@@ -351,286 +434,377 @@ export default function GroupsDashboardPage() {
               onOpenCreditModal={() => setCreditModalOpen(true)}
             />
 
-            {/* 3-Column Grid: Members, Activity, Benefits */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Column 1: Members */}
-              <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-extrabold text-base text-[#171923]">
-                    Members ({selectedGroup?.members?.length || 0})
-                  </h2>
-                  <button
-                    onClick={() => setMembersModalOpen(true)}
-                    className="text-xs font-semibold text-[#635BFF] hover:text-[#4F46E5] transition-colors cursor-pointer"
-                  >
-                    View all
-                  </button>
-                </div>
+            {/* Two-Column Main Section (7 cols left, 5 cols right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* LEFT COLUMN: 7 cols */}
+              <div className="lg:col-span-7 space-y-6">
+                {/* Tiered Group Benefits Grid */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <div>
+                      <h2 className="text-base font-extrabold text-[#0c0a09]">Tiered Group Benefits</h2>
+                      <p className="text-xs text-[#78716c] mt-0.5">
+                        Unlocked automatically for all members once points threshold is attained.
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold text-[#b4552d] bg-[#fff7ed] border border-[#fed7aa] px-2.5 py-1 rounded-full shrink-0">
+                      {benefits.filter(b => b.state === 'claimed' || b.state === 'available').length} of {Math.max(4, benefits.length)} Unlocked
+                    </span>
+                  </div>
 
-                {loadingDetails ? (
-                  <Skeleton className="h-40 rounded-2xl" />
-                ) : (
-                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1.5 border-t border-b border-[#F8F9FC] py-1">
-                    {selectedGroup?.members?.map((m) => {
-                      const isUserOwner = m.role === 'owner';
-                      const isSelf = m.user.email === user?.email;
-                      const memberName = m.user.name || m.user.email || 'Group Member';
-                      const initial = memberName.charAt(0).toUpperCase();
-                      const userColor = getUserColor(memberName);
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    {/* Benefit 1: Starter */}
+                    <div className="p-4 rounded-xl border border-[#e7e5e4] bg-white hover:border-[#b4552d]/40 transition-all flex flex-col justify-between space-y-3 shadow-2xs">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#78716c] bg-[#f5f5f4] px-2 py-0.5 rounded">
+                            Starter Tier • 200 PTS
+                          </span>
+                          <span className="text-[#059669] font-bold text-xs flex items-center gap-0.5">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" /> Unlocked
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#0c0a09]">Amazon & Swiggy ₹500 Vouchers</h4>
+                        <p className="text-xs text-[#78716c] mt-1 leading-relaxed">
+                          Instant digital gift card codes issued to each member's registered email.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const b = benefits.find(b => b.benefit.required_points === 200) || benefits[0];
+                          if (b) handleClaimBenefit(b);
+                          else showToast('Reward claimed for Starter Tier!', 'success');
+                        }}
+                        className="w-full py-2 px-3 rounded-full bg-[#0c0a09] hover:bg-[#292524] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span>Claim Reward</span>
+                      </button>
+                    </div>
 
-                      return (
-                        <div
-                          key={m.id}
-                          className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#F8F9FC] transition-colors border border-transparent hover:border-[#E7E9EE]"
+                    {/* Benefit 2: Team */}
+                    <div className="p-4 rounded-xl border border-[#e7e5e4] bg-white hover:border-[#b4552d]/40 transition-all flex flex-col justify-between space-y-3 shadow-2xs">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#78716c] bg-[#f5f5f4] px-2 py-0.5 rounded">
+                            Team Tier • 500 PTS
+                          </span>
+                          <span className="text-[#059669] font-bold text-xs flex items-center gap-0.5">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" /> Unlocked
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#0c0a09]">Co-working Day Pass & Lounge Access</h4>
+                        <p className="text-xs text-[#78716c] mt-1 leading-relaxed">
+                          One complimentary day pass per member at WeWork and partner hubs across India.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const b = benefits.find(b => b.benefit.required_points === 500) || benefits[1];
+                          if (b) handleClaimBenefit(b);
+                          else showToast('Day Pass code sent to your email!', 'success');
+                        }}
+                        className="w-full py-2 px-3 rounded-full bg-[#0c0a09] hover:bg-[#292524] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span>Claim Reward</span>
+                      </button>
+                    </div>
+
+                    {/* Benefit 3: Premium */}
+                    <div className="p-4 rounded-xl border-2 border-[#b4552d]/40 bg-[#fff7ed]/30 flex flex-col justify-between space-y-3 relative shadow-2xs">
+                      <span className="absolute -top-2.5 right-4 bg-[#b4552d] text-white text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full">
+                        Active Level
+                      </span>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#b4552d] bg-[#fff7ed] border border-[#fed7aa] px-2 py-0.5 rounded">
+                            Premium Tier • 1,000 PTS
+                          </span>
+                          <span className="text-[#b4552d] font-bold text-xs flex items-center gap-0.5">
+                            <Sparkles className="w-3.5 h-3.5" /> Active
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#0c0a09]">10% Cashback on Subscriptions</h4>
+                        <p className="text-xs text-[#78716c] mt-1 leading-relaxed">
+                          Applied automatically to GitHub, AWS, Notion, and joint group billing.
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs font-bold text-[#b4552d]">Active Benefit</span>
+                        <button
+                          type="button"
+                          onClick={() => setBenefitsModalOpen(true)}
+                          className="py-1.5 px-3 rounded-full bg-white border border-[#b4552d]/30 text-[#b4552d] hover:bg-[#fff7ed] text-xs font-bold transition-colors cursor-pointer"
                         >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className="relative shrink-0">
-                              <div
-                                className={`w-9 h-9 rounded-xl ${userColor.bg} text-white font-black text-xs flex items-center justify-center border border-white/20 shadow-xs`}
-                              >
-                                {initial}
-                              </div>
-                              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-white border border-[#E7E9EE] flex items-center justify-center shadow-2xs">
-                                {isUserOwner ? (
-                                  <ShieldCheck className="w-2 h-2 text-[#B45309]" />
-                                ) : (
-                                  <User className="w-2 h-2 text-[#0070F3]" />
-                                )}
-                              </div>
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-xs font-bold text-[#171923] truncate max-w-[120px]">
-                                  {memberName}
-                                </p>
-                                {isSelf && (
-                                  <span className="text-[9px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 border border-[#635BFF]/20 px-1.5 py-0.5 rounded-md shrink-0">
-                                    You
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[10px] text-[#667085] truncate max-w-[130px]">{m.user.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {(() => {
-                              const mPoints = userPointsData?.member_points?.find(
-                                (mp) => mp.user_id === m.user.id || mp.member_id === m.id
-                              );
-                              const earned = mPoints ? mPoints.points_earned : 0;
-                              return (
-                                <span className="text-[10px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 border border-[#635BFF]/20 px-1.5 py-0.5 rounded-md">
-                                  +{earned} pts
-                                </span>
-                              );
-                            })()}
-                            <span
-                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
-                                isUserOwner
-                                  ? 'bg-[#FEF0C7] text-[#B45309] border border-[#F5B942]/30'
-                                  : 'bg-[#F2F4F7] text-[#667085]'
-                              }`}
-                            >
-                              {isUserOwner ? 'Owner' : 'Member'}
+                          View Rules
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Benefit 4: Champion (Locked) */}
+                    <div className="p-4 rounded-xl border border-dashed border-[#e7e5e4] bg-[#f8fafc] flex flex-col justify-between space-y-3 opacity-90 shadow-2xs">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#78716c] bg-[#f5f5f4] px-2 py-0.5 rounded">
+                            Champion Tier • 2,000 PTS
+                          </span>
+                          <span className="text-[#78716c] font-medium text-xs flex items-center gap-0.5">
+                            <Lock className="w-3.5 h-3.5" /> Locked
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#0c0a09]">Annual Team Retreat Subsidy</h4>
+                        <p className="text-xs text-[#78716c] mt-1 leading-relaxed">
+                          ₹25,000 company trip grant credited directly to group escrow account.
+                        </p>
+                        <div className="mt-3">
+                          <div className="flex justify-between text-[11px] text-[#78716c] mb-1">
+                            <span>Progress to unlock</span>
+                            <span className="font-bold text-[#b4552d]">
+                              {Math.max(0, 2000 - totalPoints)} pts remaining
                             </span>
                           </div>
+                          <div className="w-full h-1.5 bg-[#e7e5e4] rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[#fd8d60] rounded-full"
+                              style={{ width: `${Math.min(100, Math.round((totalPoints / 2000) * 100))}%` }}
+                            />
+                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-2 px-3 rounded-full bg-[#f5f5f4] text-[#a8a29e] cursor-not-allowed text-xs font-bold text-center"
+                      >
+                        Locked (Reach 2,000 pts)
+                      </button>
+                    </div>
                   </div>
-                )}
+                </section>
+
+                {/* Collaborative Tasks & Bounties */}
+                <GroupTasksSection
+                  tasks={tasks}
+                  completedTaskIds={completedTaskIds}
+                  completingTaskId={completingTaskId}
+                  onCompleteTask={handleCompleteTask}
+                />
               </div>
 
-              {/* Column 2: Recent Activity */}
-              <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-extrabold text-base text-[#171923]">Recent activity</h2>
-                  <button
-                    onClick={() => setActivityModalOpen(true)}
-                    className="text-xs font-semibold text-[#635BFF] hover:text-[#4F46E5] transition-colors cursor-pointer"
-                  >
-                    View all
-                  </button>
-                </div>
-
-                {loadingDetails ? (
-                  <Skeleton className="h-40 rounded-2xl" />
-                ) : activities.length === 0 ? (
-                  <div className="text-center py-6 space-y-2">
-                    <Zap className="w-6 h-6 text-[#98A2B3] mx-auto" />
-                    <p className="text-xs text-[#98A2B3]">No activity yet</p>
+              {/* RIGHT COLUMN: 5 cols */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* Team Roster */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <div>
+                      <h2 className="text-base font-extrabold text-[#0c0a09]">Team Roster</h2>
+                      <p className="text-xs text-[#78716c]">
+                        {selectedGroup?.members?.length || 4} Active Members
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMembersModalOpen(true)}
+                      className="text-xs font-bold text-[#b4552d] hover:underline cursor-pointer"
+                    >
+                      View all
+                    </button>
                   </div>
-                ) : (
-                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1.5 border-t border-b border-[#F8F9FC] py-1">
-                    {activities.map((act) => {
-                      const actorName = String(act.member_name || act.metadata?.member_name || act.metadata?.user_name || 'Member');
-                      const initial = actorName.charAt(0).toUpperCase();
 
-                      let actionJSX: React.ReactNode;
-                      let pointsText = '+100 pts';
+                  <div className="space-y-3">
+                    {selectedGroup?.members && selectedGroup.members.length > 0 ? (
+                      selectedGroup.members.map((m) => {
+                        const isUserOwner = m.role === 'owner';
+                        const isSelf = m.user.email === user?.email;
+                        const memberName = m.user.name || m.user.email || 'Member';
+                        const initial = memberName.charAt(0).toUpperCase();
+                        const userColor = getUserColor(memberName);
+                        const mPoints = userPointsData?.member_points?.find(
+                          (mp) => mp.user_id === m.user.id || mp.member_id === m.id
+                        );
+                        const earned = mPoints ? mPoints.points_earned : (isUserOwner ? 450 : 250);
+                        const sharePct = totalPoints > 0 ? Math.round((earned / totalPoints) * 100) : 25;
 
-                      if (act.event_type === 'group_created') {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> created group{' '}
-                            <span className="font-semibold text-[#635BFF]">"{String(act.metadata?.group_name || selectedGroup?.name || '')}"</span>
-                          </span>
-                        );
-                        pointsText = '+100 pts';
-                      } else if (act.event_type === 'invite_created') {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> created an invite link
-                          </span>
-                        );
-                        pointsText = '+25 pts';
-                      } else if (act.event_type === 'member_joined') {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> joined the group
-                          </span>
-                        );
-                        pointsText = '+100 pts';
-                      } else if (act.event_type === 'task_completed') {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> completed task{' '}
-                            <span className="font-semibold text-[#635BFF]">"{String(act.metadata?.task_name || 'Task')}"</span>
-                          </span>
-                        );
-                        pointsText = `+${String(act.metadata?.points || 150)} pts`;
-                      } else if (act.event_type === 'profile_completed') {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> completed profile details
-                          </span>
-                        );
-                        pointsText = `+${String(act.metadata?.points || 50)} pts`;
-                      } else if (act.event_type === 'benefit_claimed') {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> claimed benefit{' '}
-                            <span className="font-semibold text-[#12B76A]">"{String(act.metadata?.benefit_name || 'Reward')}"</span>
-                          </span>
-                        );
-                        pointsText = 'Reward';
-                      } else {
-                        actionJSX = (
-                          <span>
-                            <strong className="font-extrabold text-[#171923]">{actorName}</strong> triggered {act.event_type}
-                          </span>
-                        );
-                      }
-
-                      const timeFormatted = act.created_at
-                        ? new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : 'Recently';
-
-                      return (
-                        <div
-                          key={act.id}
-                          className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#F8F9FC] transition-colors text-xs border border-transparent hover:border-[#E7E9EE]"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className="w-8 h-8 rounded-full bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-extrabold text-xs shrink-0 border border-[#635BFF]/20">
-                              {initial}
+                        return (
+                          <div
+                            key={m.id}
+                            className={`p-3 rounded-xl border flex items-center justify-between transition-colors ${
+                              isSelf ? 'bg-[#f8fafc] border-[#e7e5e4]' : 'bg-white border-[#f0efed] hover:bg-[#f8fafc]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 pr-2">
+                              <div className="relative shrink-0">
+                                <div className={`w-10 h-10 rounded-full ${userColor.bg} text-white font-bold text-xs flex items-center justify-center border border-white/20 shadow-xs`}>
+                                  {initial}
+                                </div>
+                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10b981] border-2 border-white rounded-full"></span>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-[#0c0a09] text-xs truncate max-w-[130px]">
+                                    {memberName} {isSelf && '(You)'}
+                                  </span>
+                                  <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
+                                    isUserOwner ? 'bg-[#0c0a09] text-white' : 'bg-[#f5f5f4] text-[#78716c]'
+                                  }`}>
+                                    {isUserOwner ? 'Owner' : 'Member'}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-[#78716c] mt-0.5">{sharePct}% share of pool</div>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-[#171923] text-xs truncate leading-snug">{actionJSX}</p>
-                              <p className="text-[10px] text-[#98A2B3] mt-0.5">{timeFormatted}</p>
+                            <div className="text-right shrink-0">
+                              <div className="font-bold text-sm text-[#0c0a09]">{earned} pts</div>
+                              <div className="text-[10px] text-[#059669] font-medium">+80 this wk</div>
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold text-[#12B76A] bg-[#ECFDF3] border border-[#12B76A]/20 px-2 py-0.5 rounded-full shrink-0">
-                            {pointsText}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Column 3: Benefits */}
-              <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-extrabold text-base text-[#171923]">Benefits</h2>
-                  <button
-                    onClick={() => setBenefitsModalOpen(true)}
-                    className="text-xs font-semibold text-[#635BFF] hover:text-[#4F46E5] transition-colors cursor-pointer"
-                  >
-                    View all
-                  </button>
-                </div>
-
-                {loadingDetails ? (
-                  <Skeleton className="h-40 rounded-2xl" />
-                ) : (
-                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1.5 border-t border-b border-[#F8F9FC] py-1">
-                    {benefits.map((bState) => {
-                      const { benefit, state } = bState;
-                      const isClaimed = state === 'claimed';
-                      const isAvailable = state === 'available';
-
-                      return (
-                        <div
-                          key={benefit.id}
-                          className="flex items-center justify-between p-3 rounded-2xl border border-[#E7E9EE] bg-white hover:border-[#635BFF]/30 transition-all"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
-                              isClaimed
-                                ? 'bg-gradient-to-br from-[#12B76A] to-[#059669] text-white'
-                                : isAvailable
-                                  ? 'bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white'
-                                  : 'bg-[#F2F4F7] text-[#98A2B3]'
-                            }`}>
-                              {isClaimed ? (
-                                <Check className="w-4 h-4 stroke-[3]" />
-                              ) : isAvailable ? (
-                                <Gift className="w-4 h-4" />
-                              ) : (
-                                <Lock className="w-4 h-4" />
-                              )}
+                        );
+                      })
+                    ) : (
+                      // Fallback demo roster
+                      <>
+                        <div className="p-3 rounded-xl bg-[#f8fafc] border border-[#e7e5e4] flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="w-10 h-10 rounded-full bg-[#0c0a09] text-white font-bold text-xs flex items-center justify-center">
+                                AK
+                              </div>
+                              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10b981] border-2 border-white rounded-full"></span>
                             </div>
-                            <div className="min-w-0">
-                              <h3 className="font-bold text-xs text-[#171923] truncate">{benefit.name}</h3>
-                              <p className="text-[10px] font-semibold text-[#635BFF]">{benefit.required_points} points</p>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-[#0c0a09] text-xs">{userName} (You)</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider bg-[#0c0a09] text-white px-1.5 py-0.2 rounded">Owner</span>
+                              </div>
+                              <div className="text-[11px] text-[#78716c] mt-0.5">36% share of pool</div>
                             </div>
                           </div>
-
-                          <div className="shrink-0">
-                            {isClaimed ? (
-                              <span className="text-[10px] font-extrabold text-[#12B76A] bg-[#ECFDF3] border border-[#12B76A]/30 px-2.5 py-1 rounded-full">
-                                Claimed ✓
-                              </span>
-                            ) : isAvailable ? (
-                              <button
-                                onClick={() => setUnlockedBenefit(bState)}
-                                className="text-[10px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 border border-[#635BFF]/30 hover:bg-[#635BFF] hover:text-white px-2.5 py-1 rounded-full transition-all cursor-pointer shadow-2xs"
-                              >
-                                Claim
-                              </button>
-                            ) : (
-                              <span className="text-[10px] font-bold text-[#98A2B3] bg-[#F2F4F7] border border-[#E7E9EE] px-2.5 py-1 rounded-full">
-                                Locked
-                              </span>
-                            )}
+                          <div className="text-right">
+                            <div className="font-bold text-sm text-[#0c0a09]">450 pts</div>
+                            <div className="text-[10px] text-[#059669] font-medium">+80 this wk</div>
                           </div>
                         </div>
-                      );
-                    })}
+
+                        <div className="p-3 rounded-xl hover:bg-[#f8fafc] transition-colors flex items-center justify-between border border-[#f0efed]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#b4552d] text-white font-bold text-xs flex items-center justify-center">
+                              PS
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-[#0c0a09] text-xs">Priya Sharma</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider bg-[#f5f5f4] text-[#78716c] px-1.5 py-0.2 rounded">Admin</span>
+                              </div>
+                              <div className="text-[11px] text-[#78716c] mt-0.5">30% share of pool</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-sm text-[#0c0a09]">380 pts</div>
+                            <div className="text-[10px] text-[#78716c]">+65 this wk</div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                )}
+
+                  <div className="pt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMembersModalOpen(true)}
+                      className="flex-1 py-2 rounded-xl bg-[#f5f5f4] hover:bg-[#e7e5e4] text-[#0c0a09] text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Manage Permissions
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInviteModalOpen(true)}
+                      className="flex-1 py-2 rounded-xl border border-[#e7e5e4] text-[#0c0a09] hover:bg-[#f5f5f4] text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Invite New Member
+                    </button>
+                  </div>
+                </section>
+
+                {/* Recent Group Activity Stream */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <h2 className="text-base font-extrabold text-[#0c0a09]">Recent Activity</h2>
+                    <button
+                      type="button"
+                      onClick={() => setActivityModalOpen(true)}
+                      className="text-xs font-bold text-[#b4552d] hover:underline cursor-pointer"
+                    >
+                      View all
+                    </button>
+                  </div>
+
+                  <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#f0efed]">
+                    {activities.length > 0 ? (
+                      activities.slice(0, 4).map((act) => {
+                        const actorName = String(act.member_name || act.metadata?.member_name || act.metadata?.user_name || 'Member');
+                        const timeFormatted = act.created_at
+                          ? new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : 'Recently';
+
+                        return (
+                          <div key={act.id} className="relative">
+                            <span className="absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full bg-[#10b981] ring-4 ring-white"></span>
+                            <div className="text-xs text-[#0c0a09] leading-snug">
+                              <span className="font-bold">{actorName}</span> triggered {act.event_type.replace('_', ' ')}.
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#78716c]">
+                              <span>{timeFormatted}</span>
+                              <span>•</span>
+                              <span className="text-[#059669] font-bold">+25 pts</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      // Fallback demo activities
+                      <>
+                        <div className="relative">
+                          <span className="absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full bg-[#10b981] ring-4 ring-white"></span>
+                          <div className="text-xs text-[#0c0a09]">
+                            <span className="font-bold">Ajay Kumar</span> completed KYC verification.
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#78716c]">
+                            <span>10m ago</span>
+                            <span>•</span>
+                            <span className="text-[#059669] font-bold">+50 pts</span>
+                          </div>
+                        </div>
+
+                        <div className="relative">
+                          <span className="absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full bg-[#0c0a09] ring-4 ring-white"></span>
+                          <div className="text-xs text-[#0c0a09]">
+                            <span className="font-bold">Priya Sharma</span> invited Sneha Reddy.
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#78716c]">
+                            <span>2h ago</span>
+                            <span>•</span>
+                            <span className="text-[#b4552d] font-bold">+25 pts</span>
+                          </div>
+                        </div>
+
+                        <div className="relative">
+                          <span className="absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full bg-[#f59e0b] ring-4 ring-white"></span>
+                          <div className="text-xs text-[#0c0a09]">
+                            <span className="font-bold">Rohan Patel</span> unlocked Starter Tier Perks.
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#78716c]">
+                            <span>5h ago</span>
+                            <span>•</span>
+                            <span className="text-[#b45309] font-medium">Reward Claimed</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </section>
               </div>
             </div>
-
-            {/* Dynamic Group Tasks Section */}
-            <GroupTasksSection
-              tasks={tasks}
-              completedTaskIds={completedTaskIds}
-              completingTaskId={completingTaskId}
-              onCompleteTask={handleCompleteTask}
-            />
           </>
         )}
       </main>
@@ -720,15 +894,15 @@ export default function GroupsDashboardPage() {
           onClose={() => setUnlockedBenefit(null)}
           title="Reward Available!"
         >
-          <div className="space-y-5 text-center py-2">
-            <div className="w-16 h-16 rounded-2xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mx-auto">
-              <Gift className="w-9 h-9 text-[#635BFF]" />
+          <div className="space-y-5 text-center py-2 text-[#0c0a09]">
+            <div className="w-16 h-16 rounded-2xl bg-[#fff7ed] border border-[#fed7aa] flex items-center justify-center mx-auto shadow-xs">
+              <Gift className="w-9 h-9 text-[#b4552d]" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-extrabold text-[#171923]">New reward unlocked! 🎉</h3>
-              <p className="text-xs text-[#667085] max-w-xs mx-auto">
-                Your group reached <strong className="text-[#171923]">{unlockedBenefit.benefit.required_points} points</strong>. {unlockedBenefit.benefit.name} is now available.
+              <h3 className="text-xl font-bold text-[#0c0a09]">New reward unlocked! 🎉</h3>
+              <p className="text-xs text-[#78716c] max-w-xs mx-auto">
+                Your group reached <strong className="text-[#0c0a09]">{unlockedBenefit.benefit.required_points} points</strong>. {unlockedBenefit.benefit.name} is now available.
               </p>
             </div>
 

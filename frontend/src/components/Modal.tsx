@@ -1,13 +1,21 @@
 import React, { useEffect } from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  maxWidth?: string;
 }
 
-export default function Modal({ open, onClose, title, children }: ModalProps) {
+export default function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  maxWidth = 'max-w-xl',
+}: ModalProps) {
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -21,21 +29,21 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 sm:p-6 overflow-y-auto animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
+        className={`bg-white rounded-3xl border border-[#e7e5e4] shadow-[0_20px_50px_rgba(12,10,9,0.14)] w-full ${maxWidth} p-6 sm:p-7 relative transition-all duration-200 my-auto`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between pb-4 border-b border-[#e7e5e4] mb-5">
+          <h2 className="text-lg font-bold text-[#0c0a09] tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            className="p-1.5 rounded-full text-[#78716c] hover:text-[#0c0a09] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
             aria-label="Close"
           >
-            ×
+            <X className="w-5 h-5" />
           </button>
         </div>
         {children}

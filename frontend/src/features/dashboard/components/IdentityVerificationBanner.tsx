@@ -1,7 +1,6 @@
 import React from 'react';
-import { ShieldCheck, CreditCard, TrendingUp } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
 import type { User } from '../../../types';
-import VerificationBadge from '../../../components/VerificationBadge';
 
 interface IdentityVerificationBannerProps {
   user: User | null;
@@ -14,69 +13,64 @@ export const IdentityVerificationBanner: React.FC<IdentityVerificationBannerProp
   onOpenKycTab,
   onOpenCreditModal,
 }) => {
-  const isFullVerified = user?.pan_verified && user?.aadhaar_verified;
+  const isAadhaarVerified = Boolean(user?.aadhaar_verified);
+  const isPanVerified = Boolean(user?.pan_verified);
+  const isFullVerified = isAadhaarVerified && isPanVerified;
 
   return (
-    <div className="bg-white border border-[#E7E9EE] rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="flex items-center gap-3.5">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#635BFF]/10 to-[#12B76A]/10 border border-[#635BFF]/20 flex items-center justify-center text-[#635BFF] shrink-0">
-          <ShieldCheck className="w-6 h-6" />
+    <section className="bg-white rounded-2xl border border-[#e7e5e4] p-5 custom-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-start sm:items-center gap-3.5">
+        <div className="w-10 h-10 rounded-xl bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] flex items-center justify-center shrink-0">
+          <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="font-extrabold text-sm text-[#171923] flex items-center gap-2">
-            <span>Identity Verification & Badges</span>
-            {isFullVerified && (
-              <span className="text-[10px] font-bold text-[#027A48] bg-[#ECFDF3] border border-[#12B76A]/30 px-2 py-0.5 rounded-full">
-                100% Verified
-              </span>
-            )}
-          </h3>
-          <p className="text-xs text-[#667085] mt-0.5">
-            Verify your Aadhaar and PAN to earn trusted badges and unlock member rewards.
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-extrabold text-[#0c0a09] text-base">Identity Verification & Badges</h3>
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#ecfdf5] text-[#065f46]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>{' '}
+              {isFullVerified ? '100% Verified' : isAadhaarVerified || isPanVerified ? 'Partially Verified' : 'Action Required'}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 mt-1.5 text-xs">
+            <span
+              onClick={onOpenKycTab}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border cursor-pointer transition-colors ${
+                isAadhaarVerified
+                  ? 'bg-[#f8fafc] text-[#0c0a09] border-[#e7e5e4]'
+                  : 'bg-[#fff7ed] text-[#b4552d] border-[#fed7aa] hover:bg-[#ffedd5]'
+              }`}
+            >
+              <CheckCircle2 className={`w-3.5 h-3.5 ${isAadhaarVerified ? 'text-[#059669]' : 'text-[#b4552d]'}`} />
+              <span>Aadhaar: {isAadhaarVerified ? 'Verified (DigiLocker)' : 'Pending Verification'}</span>
+            </span>
+
+            <span
+              onClick={onOpenKycTab}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border cursor-pointer transition-colors ${
+                isPanVerified
+                  ? 'bg-[#f8fafc] text-[#0c0a09] border-[#e7e5e4]'
+                  : 'bg-[#fff7ed] text-[#b4552d] border-[#fed7aa] hover:bg-[#ffedd5]'
+              }`}
+            >
+              <CheckCircle2 className={`w-3.5 h-3.5 ${isPanVerified ? 'text-[#059669]' : 'text-[#b4552d]'}`} />
+              <span>PAN: {isPanVerified ? 'Verified (Income Tax Registry)' : 'Pending Verification'}</span>
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-        {/* Aadhaar Badge / Action */}
-        {user?.aadhaar_verified ? (
-          <VerificationBadge type="aadhaar" status="VERIFIED" />
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenKycTab}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ECFDF3] text-[#027A48] border border-[#12B76A]/40 hover:bg-[#D1FADF] transition-all cursor-pointer"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#12B76A]" />
-            <span>Verify Aadhaar (+Badge)</span>
-          </button>
-        )}
-
-        {/* PAN Badge / Action */}
-        {user?.pan_verified ? (
-          <VerificationBadge type="pan" status="VERIFIED" />
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenKycTab}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#EFF8FF] text-[#175CD3] border border-[#84CAFF] hover:bg-[#D1E9FF] transition-all cursor-pointer"
-          >
-            <CreditCard className="w-3.5 h-3.5 text-[#2E90FA]" />
-            <span>Verify PAN (+50 pts & Badge)</span>
-          </button>
-        )}
-
-        {/* Financial & Credit Insights Button */}
+      <div className="flex items-center gap-3 shrink-0">
         <button
           type="button"
           onClick={onOpenCreditModal}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#171923] text-white hover:bg-[#344054] transition-all cursor-pointer shadow-xs"
+          className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#f8fafc] hover:bg-[#f1f5f9] text-[#0c0a09] text-xs font-bold border border-[#e7e5e4] transition-colors cursor-pointer shadow-2xs"
         >
-          <TrendingUp className="w-3.5 h-3.5 text-[#A4BCFD]" />
           <span>Credit & Financial Insights</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
-    </div>
+    </section>
   );
 };
 

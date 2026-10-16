@@ -16,12 +16,12 @@
   }
 }
 
-/* Reusable UI Utility Classes matching Design Spec */
+/* Reusable UI Utility Classes matching Samaro.ai Design Spec */
 .btn-primary {
   background-color: var(--c-primary);
-  color: #FFFFFF;
-  font-weight: 600;
-  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-weight: 500;
+  border-radius: var(--radius-full);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
@@ -31,11 +31,12 @@
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--c-primary-hover);
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
 .btn-primary:active:not(:disabled) {
+  background-color: var(--c-primary-active);
   transform: translateY(0);
 }
 
@@ -46,11 +47,11 @@
 }
 
 .btn-secondary {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   color: var(--c-text-primary);
   border: 1px solid var(--c-border);
-  font-weight: 600;
-  border-radius: var(--radius-md);
+  font-weight: 500;
+  border-radius: var(--radius-full);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
@@ -69,7 +70,7 @@
 }
 
 .card-surface {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xs);
@@ -80,42 +81,51 @@
 }
 
 .card-surface-hover:hover {
-  border-color: rgba(99, 91, 255, 0.4);
+  border-color: var(--c-border-strong);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
-.reward-card-gold {
-  background: linear-gradient(135deg, #FFFDF5 0%, #FEF8E7 100%);
-  border: 1px solid var(--c-gold-border);
-  box-shadow: var(--shadow-gold);
+/* Samaro Shimmer Badge */
+.badge-shimmer {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(100deg, #b4552d, #d98a5a 28%, #f0cbae 60%, #b4552d);
+  background-size: 260% 100%;
+  animation: badge-shimmer-anim 3s linear infinite;
+}
+
+@keyframes badge-shimmer-anim {
+  0% { background-position: 140% 0; }
+  100% { background-position: -140% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-shimmer {
+    animation: none;
+    background-position: 50% 0;
+  }
 }
 
 /* Glassmorphism surface */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(231, 233, 238, 0.8);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--c-border);
 }
 
 /* Micro-animations */
-@keyframes pulse-subtle {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.03);
-  }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 2.5s infinite ease-in-out;
-}
-
 @keyframes slide-up {
   from {
-    transform: translateY(12px);
+    transform: translateY(8px);
     opacity: 0;
   }
   to {
@@ -125,7 +135,7 @@
 }
 
 .animate-slide-up {
-  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fadeIn {
@@ -134,5 +144,23 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stitch Card Shadows */
+.custom-shadow-card {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 4px 12px 0 rgba(0, 0, 0, 0.02), 0 16px 32px -4px rgba(12, 10, 9, 0.05);
+}
+
+.custom-card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 4px 12px 0 rgba(0, 0, 0, 0.02);
+}
+
+@keyframes progressCountdown {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-progress {
+  animation: progressCountdown 5s linear forwards;
 }

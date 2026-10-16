@@ -114,15 +114,84 @@ export interface AadhaarVerifyResponse {
   message?: string;
 }
 
+export interface AccountSummaryData {
+  total_accounts: number;
+  current_balance: number;
+  high_credit_amount: number;
+  overdue_account_count: number;
+  overdue_balance: number;
+  zero_balance_account_count: number;
+  oldest_account_date?: string;
+  recent_account_date?: string;
+}
+
+export interface InquirySummaryData {
+  total_enquiries: number;
+  past_30_days?: number;
+  past_12_months?: number;
+  past_24_months?: number;
+  recent_inquiry_date?: string;
+}
+
+export interface MonthlyPayStatus {
+  month: string;
+  status: string;
+}
+
+export interface CreditAccountItem {
+  account_type: string;
+  masked_account_number: string;
+  lender_name: string;
+  current_balance: number;
+  overdue_amount: number;
+  high_credit_amount: number;
+  opened_date?: string;
+  reported_date?: string;
+  emi_amount?: number;
+  repayment_tenure?: number;
+  payment_history?: MonthlyPayStatus[];
+}
+
+export interface CreditEnquiryItem {
+  institution: string;
+  purpose: string;
+  amount?: number;
+  date?: string;
+}
+
+export interface DetailedCreditReport {
+  success: boolean;
+  credit_score: number | null;
+  score_band: string | null;
+  account_summary: AccountSummaryData;
+  inquiry_summary: InquirySummaryData;
+  accounts: CreditAccountItem[];
+  enquiries: CreditEnquiryItem[];
+  fetched_at?: string;
+  provider_reference?: string;
+  error?: string;
+  message?: string;
+}
+
 export interface CreditProfile {
   success: boolean;
   status: string;
   has_report: boolean;
+  has_full_report?: boolean;
   credit_score: number | null;
   score_band: string | null;
   total_outstanding: number | null;
   active_accounts_count: number;
   overdue_amount: number | null;
+  high_credit_amount?: number | null;
+  overdue_accounts_count?: number;
+  zero_balance_accounts_count?: number;
+  oldest_account_date?: string;
+  recent_account_date?: string;
+  total_enquiries_count?: number;
+  recent_enquiry_date?: string;
+  accounts_summary?: AccountSummaryData;
+  inquiry_summary?: InquirySummaryData;
   last_report_date: string | null;
   status_message: string;
   can_retry: boolean;
@@ -133,6 +202,10 @@ export interface CreditProfile {
 export interface CreditReportRequest {
   consent: boolean;
   purpose?: string;
+  report_type?: 'score' | 'full_report';
+  pan?: string;
+  mobile?: string;
+  name?: string;
 }
 
 export interface PanVerificationData {
@@ -191,6 +264,7 @@ export interface Invitation {
   status: string;
   invite_url: string;
   created_at: string;
+  created_by_name?: string;
 }
 
 export interface Activity {

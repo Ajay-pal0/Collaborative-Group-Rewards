@@ -70,13 +70,38 @@ Benefit Unlock & Activity Feed Phase
 
 ## Architecture & Design System
 
-### Visual & Design System
-The frontend is built with a modern SaaS fintech visual language:
-- **Design Tokens**: Standardized CSS variables defined in [tokens.css](frontend/src/styles/tokens.css) including brand `#635BFF`, background `#F8F9FC`, card surface `#FFFFFF`, border `#E7E9EE`, and semantic status tokens (`#12B76A` emerald success, `#F5B942` gold milestones, `#F04438` error).
-- **Reusable Primitives**: Modular UI components in `frontend/src/components/ui/` (`Button`, `Badge`, `Card`, `Input`, `ProgressBar`, `Tabs`).
-- **Feature Modularization**: Decomposed monolithic views into feature-driven modules under `frontend/src/features/` (`auth`, `dashboard`, `profile`, `credit`).
+### Visual & Design System (Samaro.ai-Inspired)
+
+The platform features a clean, high-contrast fintech aesthetic inspired by Samaro.ai:
+
+- **Design Tokens**: Standardized CSS variables defined in [tokens.css](frontend/src/styles/tokens.css):
+  - Primary Brand & Action: Deep obsidian (`#0c0a09` / `#292524`)
+  - Page & Card Surfaces: Clean warm stone background (`#f5f5f5`), crisp card surfaces (`#ffffff`), subtle borders (`#e7e5e4`)
+  - Brand Accents: Restrained warm terracotta / bronze (`#b4552d` / `#d98a5a`), warm milestone gold (`#d97706`)
+  - Semantic Status: Emerald verified (`#059669` / `#ecfdf5`), Amber pending (`#d97706`), Red alert (`#dc2626` / `#fef2f2`)
+- **Pill Primitives & Typography**: High-contrast Inter typography, accessible focus rings, pill-shaped primary actions, and non-color accessible status indicators.
+- **Reusable Primitives**: Modular UI components in `frontend/src/components/ui/` (`Button`, `Badge`, `StatusBadge`, `Card`, `Input`, `ProgressBar`, `Tabs`, `PageHeader`, `LoadingState`, `EmptyState`, `ErrorState`).
+- **Feature Modularization**: Decomposed views into feature-driven modules under `frontend/src/features/` (`auth`, `dashboard`, `profile`, `credit`, `groups`, `rewards`).
+
+### CIBIL Credit Intelligence & Identity Verification Architecture
+
+- **Surepass CIBIL Integration**:
+  - **Endpoint A (CIBIL Score)**: `POST /api/v1/credit-report-cibil/score` via backend `POST /api/v1/credit/score/`
+  - **Endpoint B (Detailed CIBIL Report)**: `POST /api/v1/credit-report-cibil/fetch-report` via backend `POST /api/v1/credit/full-report/`
+  - Bureau base URL configured via `SUREPASS_BASE_URL` (`https://sandbox.surepass.app`).
+  - Defensive response parsing supporting nested `consumerSummaryresp.accountSummary` and top-level fields.
+  - Approved qualitative CIBIL bands: Poor (300-549), Fair (550-649), Good (650-749), Very Good (750-799), Excellent (800-900).
+- **Authoritative Identity Verification**:
+  - Independent PAN and DigiLocker (Aadhaar) verification workflows.
+  - Verification attempt history logged via `VerificationAttempt` model without leaking sensitive credentials.
+  - PII masking: Full account numbers (`XXXXXXXX1234`), phone numbers, and identity identifiers masked before presentation.
+- **Dedicated Application Routes**:
+  - `/groups` & `/groups/:groupId` — Collaborative group rewards dashboard.
+  - `/credit` — TransUnion CIBIL Credit Dashboard (score gauge, loan accounts, payment history timeline, bureau inquiries).
+  - `/profile` — Dedicated Account Profile & Government KYC Verification page.
 
 ### High-Level Architecture
+
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        React 19 + TypeScript Frontend                  │
@@ -358,6 +383,12 @@ DB_PASSWORD=postgres
 DB_HOST=localhost
 DB_PORT=5432
 FRONTEND_URL=http://localhost:5173
+
+# Surepass KYC & CIBIL Bureau Configuration
+SUREPASS_BASE_URL=https://sandbox.surepass.app
+SUREPASS_BEARER_TOKEN=your-surepass-bearer-token
+SUREPASS_TIMEOUT=15
+SUREPASS_DIGILOCKER_CALLBACK_URL=http://localhost:5173/kyc/callback
 ```
 
 ### Frontend (`frontend/.env`)

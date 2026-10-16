@@ -7,7 +7,7 @@ import { panApi, kycApi } from '../services/apiServices';
 import { extractErrorMessage } from '../lib/api';
 import VerificationBadge from './VerificationBadge';
 import CreditDashboardModal from './CreditDashboardModal';
-import { mountDigiboostSdk } from '../features/kyc/digiboostSdk';
+import { preOpenAuthWindow, openDigilockerInNewTab } from '../features/kyc/digiboostSdk';
 import {
   User as UserIcon,
   Activity as ActivityIcon,
@@ -107,12 +107,16 @@ export default function ProfileModal({
       setAadhaarError('Please check the informed consent checkbox to proceed.');
       return;
     }
+
+    const preOpenedTab = preOpenAuthWindow();
     setAadhaarLoading(true);
     setAadhaarError('');
+
     try {
       const redirectUrl = `${window.location.origin}/kyc/callback`;
       const res = await kycApi.initiateAadhaar({ consent: true, redirect_url: redirectUrl });
       if (!res.data.success) {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
         setAadhaarError(res.data.error || 'Failed to initialize DigiLocker session.');
         setAadhaarLoading(false);
         return;
@@ -120,8 +124,9 @@ export default function ProfileModal({
 
       const clientId = res.data.client_id;
       const sdkToken = res.data.token;
+      const authUrl = res.data.authorization_url;
 
-      const confirmVerification = async () => {
+      const confirmVerification = async (): Promise<boolean> => {
         try {
           const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
           if (verifyRes.data.success) {
@@ -135,53 +140,83 @@ export default function ProfileModal({
               });
             }
             showToast('Aadhaar verified successfully via DigiLocker! 🛡️', 'success');
-          } else {
-            setAadhaarError(verifyRes.data.error || 'Aadhaar verification could not be confirmed.');
+            setAadhaarLoading(false);
+            return true;
           }
+          return false;
         } catch (confirmErr) {
           setAadhaarError(extractErrorMessage(confirmErr));
-        } finally {
-          setAadhaarLoading(false);
+          return false;
         }
       };
 
       if (sdkToken && !sdkToken.startsWith('mock_')) {
-        showToast('Opening DigiLocker authorization popup...', 'info');
-        try {
-          await mountDigiboostSdk({
-            token: sdkToken,
-            gateway: 'sandbox',
-            buttonTitle: 'Verify with DigiLocker',
-            onSuccess: async () => {
-              await confirmVerification();
-            },
-            onFailure: (err) => {
-              setAadhaarError(typeof err === 'string' ? err : 'DigiLocker verification was cancelled.');
-              setAadhaarLoading(false);
-            },
-          });
-          const onMessage = async (event: MessageEvent) => {
-            if (event.data?.type === 'digilocker:complete') {
-              window.removeEventListener('message', onMessage);
-              await confirmVerification();
-            } else if (event.data?.type === 'digilocker:failed') {
-              window.removeEventListener('message', onMessage);
-              setAadhaarError('DigiLocker verification was cancelled.');
+        showToast('Opening DigiLocker authorization in a new tab...', 'info');
+
+        let isDone = false;
+        let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+        const stopPolling = () => {
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        };
+
+        const { authWindow, cleanup } = openDigilockerInNewTab({
+          authorizationUrl: authUrl,
+          token: sdkToken,
+          gateway: 'sandbox',
+          windowRef: preOpenedTab,
+          onSuccess: async () => {
+            if (isDone) return;
+            isDone = true;
+            stopPolling();
+            cleanup();
+            await confirmVerification();
+          },
+          onFailure: async (failReason) => {
+            if (isDone) return;
+            const ok = await confirmVerification();
+            if (!ok) {
+              isDone = true;
+              stopPolling();
+              cleanup();
+              setAadhaarError(typeof failReason === 'string' ? failReason : 'DigiLocker verification was cancelled or closed.');
               setAadhaarLoading(false);
             }
-          };
-          window.addEventListener('message', onMessage);
-        } catch {
-          if (res.data.authorization_url) {
-            window.location.href = res.data.authorization_url;
-          } else {
-            await confirmVerification();
+          },
+        });
+
+        // Background auto-polling
+        let polls = 0;
+        pollTimer = setInterval(async () => {
+          polls++;
+          if (polls > 100 || isDone) {
+            stopPolling();
+            if (!isDone) setAadhaarLoading(false);
+            return;
           }
-        }
+          const ok = await confirmVerification();
+          if (ok) {
+            isDone = true;
+            stopPolling();
+            cleanup();
+            if (authWindow && !authWindow.closed) {
+              try {
+                authWindow.close();
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }, 3000);
       } else {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
         await confirmVerification();
       }
     } catch (err: unknown) {
+      if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
       setAadhaarError(extractErrorMessage(err));
       setAadhaarLoading(false);
     }
@@ -219,20 +254,20 @@ export default function ProfileModal({
 
   return (
     <>
-      <Modal open={open} onClose={handleClose} title="My Profile & Points">
-        <div className="space-y-4 text-[#171923]">
+      <Modal open={open} onClose={handleClose} title="My Profile & Points" maxWidth="max-w-xl">
+        <div className="space-y-5 text-[#0c0a09]">
           {/* User Summary Card */}
-          <div className="bg-gradient-to-r from-[#635BFF]/10 via-[#635BFF]/5 to-transparent border border-[#635BFF]/20 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white flex items-center justify-center font-black text-lg shadow-sm border border-white/20">
+          <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-4 flex items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0c0a09] to-[#292524] text-white flex items-center justify-center font-extrabold text-base shadow-xs ring-2 ring-[#e7e5e4] shrink-0">
                 {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
-              <div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3 className="font-extrabold text-sm text-[#171923]">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-sm text-[#0c0a09] truncate">
                     {user?.name || user?.email || 'User'}
                   </h3>
-                  <span className="text-[9px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-[#370e00] bg-[#ffdbce] px-2 py-0.5 rounded-full shrink-0">
                     You
                   </span>
                 </div>
@@ -248,57 +283,61 @@ export default function ProfileModal({
                     size="sm"
                   />
                 </div>
-                <p className="text-[11px] text-[#667085] mt-0.5">{user?.email}</p>
+                <p className="text-[11px] text-[#78716c] truncate mt-0.5">{user?.email}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="bg-white border border-[#E7E9EE] px-3 py-1.5 rounded-xl shadow-2xs text-center">
-                <span className="text-[9px] uppercase font-bold text-[#667085] block">Your Points</span>
-                <span className="text-sm font-black text-[#635BFF]">
-                  {userPointsData?.user_points || 0} pts
-                </span>
-              </div>
+            <div className="bg-white border border-[#e7e5e4] px-4 py-2 rounded-2xl shadow-2xs text-right shrink-0">
+              <span className="text-[10px] uppercase font-bold text-[#78716c] tracking-wider block">
+                Your Points
+              </span>
+              <span className="text-base font-extrabold text-[#b4552d]">
+                {userPointsData?.user_points || 0} pts
+              </span>
             </div>
           </div>
 
-          {/* Tab Selection */}
-          <div className="flex items-center gap-1.5 bg-[#F2F4F7] p-1.5 rounded-2xl">
+          {/* Segmented Tab Switcher (Fits single row in max-w-xl) */}
+          <div className="grid grid-cols-3 gap-1 bg-[#f5f5f4] p-1.5 rounded-2xl border border-[#e7e5e4]">
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
-              className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'overview'
-                  ? 'bg-white text-[#635BFF] shadow-xs'
-                  : 'text-[#667085] hover:text-[#171923]'
+                  ? 'bg-white text-[#0c0a09] shadow-xs'
+                  : 'text-[#78716c] hover:text-[#0c0a09]'
               }`}
             >
-              <ActivityIcon className="w-3.5 h-3.5" /> Overview
+              <ActivityIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>Overview</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('details')}
-              className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'details'
-                  ? 'bg-white text-[#635BFF] shadow-xs'
-                  : 'text-[#667085] hover:text-[#171923]'
+                  ? 'bg-white text-[#0c0a09] shadow-xs'
+                  : 'text-[#78716c] hover:text-[#0c0a09]'
               }`}
             >
-              <UserIcon className="w-3.5 h-3.5" /> Edit Profile Details
+              <UserIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>Edit Profile Details</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('kyc')}
-              className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'kyc'
-                  ? 'bg-white text-[#635BFF] shadow-xs'
-                  : 'text-[#667085] hover:text-[#171923]'
+                  ? 'bg-white text-[#0c0a09] shadow-xs'
+                  : 'text-[#78716c] hover:text-[#0c0a09]'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" /> Identity & Verification
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+              <span>Identity &amp; Verification</span>
             </button>
           </div>
 
+          {/* Content Pane */}
           {activeTab === 'overview' ? (
             <ProfileOverviewTab
               userPointsData={userPointsData}

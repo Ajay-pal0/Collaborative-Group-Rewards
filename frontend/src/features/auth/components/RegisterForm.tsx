@@ -34,9 +34,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   return (
     <form onSubmit={handleRegister} noValidate className="space-y-4">
       {regErrors.general && (
-        <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-3 rounded-xl font-semibold">
+        <div className="text-xs bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] p-3 rounded-xl font-medium">
           {regErrors.general}
-        </p>
+        </div>
       )}
 
       <div>
@@ -51,12 +51,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           placeholder="Ajay Pal"
           maxLength={255}
           error={regErrors.name}
+          required
         />
       </div>
 
       <div>
         <Input
-          label="Email"
+          label="Email Address"
           type="email"
           value={regEmail}
           onChange={(e) => {
@@ -65,11 +66,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           }}
           placeholder="ajay.pal@example.com"
           error={regErrors.email}
+          required
         />
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-[#0c0a09] mb-1.5">
           Password
         </label>
         <div className="relative">
@@ -81,21 +83,21 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               setRegErrors((p) => ({ ...p, password: '' }));
             }}
             placeholder="Min. 6 characters"
-            className={`w-full bg-[#F8F9FC] border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] ${
-              regErrors.password ? 'border-[#F04438]' : 'border-[#E7E9EE]'
+            className={`w-full bg-white border rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-[#0c0a09] placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] transition-all ${
+              regErrors.password ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
             }`}
           />
           <button
             type="button"
             onClick={() => setShowRegPassword(!showRegPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3] hover:text-[#171923] transition-colors cursor-pointer p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#78716c] hover:text-[#0c0a09] transition-colors cursor-pointer p-1"
             aria-label={showRegPassword ? 'Hide password' : 'Show password'}
           >
             {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
         {regErrors.password && (
-          <p className="text-[#F04438] text-xs mt-1 font-medium">{regErrors.password}</p>
+          <p className="text-[#dc2626] text-xs mt-1 font-medium">{regErrors.password}</p>
         )}
       </div>
 

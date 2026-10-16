@@ -26,40 +26,40 @@ export default function VerificationBadge({
 
   const docName = labelMap[type] || type.toUpperCase();
 
-  let badgeColor = 'bg-slate-800/80 text-slate-400 border-slate-700/60';
-  let icon = <ShieldAlert className="w-3.5 h-3.5 text-slate-400" />;
+  let badgeColor = 'bg-[#f5f5f5] text-[#78716c] border-[#e7e5e4]';
+  let icon = <ShieldAlert className="w-3 h-3 text-[#a8a29e] shrink-0" />;
   let statusText = 'Not Verified';
 
   if (normStatus === 'VERIFIED' || normStatus === 'COMPLETED') {
-    badgeColor = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-sm shadow-emerald-950/40';
-    icon = <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />;
+    badgeColor = 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-2xs font-semibold';
+    icon = <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />;
     statusText = 'Verified';
   } else if (normStatus === 'PENDING' || normStatus === 'PENDING_PROVIDER_ACCESS') {
-    badgeColor = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-    icon = <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />;
+    badgeColor = 'bg-amber-50 text-amber-800 border-amber-200 font-semibold';
+    icon = <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0 animate-spin-slow" />;
     statusText = normStatus === 'PENDING_PROVIDER_ACCESS' ? 'Access Pending' : 'Pending';
   } else if (normStatus === 'FAILED') {
-    badgeColor = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
-    icon = <AlertCircle className="w-3.5 h-3.5 text-rose-400" />;
+    badgeColor = 'bg-rose-50 text-rose-800 border-rose-200 font-semibold';
+    icon = <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />;
     statusText = 'Failed';
   }
 
   const sizeClasses = {
-    sm: 'text-xs px-2 py-0.5 gap-1',
-    md: 'text-xs px-2.5 py-1 gap-1.5',
-    lg: 'text-sm px-3.5 py-1.5 gap-2',
+    sm: 'text-[10px] px-2 py-0.5 gap-1',
+    md: 'text-xs px-2.5 py-0.5 gap-1.5',
+    lg: 'text-xs px-3 py-1 gap-2',
   }[size];
 
   return (
     <span
-      className={`inline-flex items-center font-medium rounded-full border transition-all ${badgeColor} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center font-semibold rounded-full border transition-all ${badgeColor} ${sizeClasses} ${className}`}
       title={`${docName}: ${statusText}`}
       role="status"
     >
       {icon}
       {showLabel && (
-        <span>
-          <span className="font-semibold">{docName}</span> {statusText}
+        <span className="leading-tight">
+          <span className="font-bold">{docName}</span> {statusText}
         </span>
       )}
     </span>

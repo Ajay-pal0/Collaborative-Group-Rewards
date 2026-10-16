@@ -4,6 +4,7 @@ import {
   CreditCard,
   CheckCircle2,
   ExternalLink,
+  Fingerprint,
 } from 'lucide-react';
 import type { User } from '../../../types';
 import VerificationBadge from '../../../components/VerificationBadge';
@@ -47,15 +48,15 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
   onClose,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-[#0c0a09]">
       {/* Identity Header */}
-      <div className="bg-[#F8F9FC] border border-[#E7E9EE] rounded-2xl p-3.5 flex items-center justify-between">
+      <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-4 flex items-center justify-between shadow-2xs">
         <div>
-          <h4 className="font-extrabold text-xs text-[#171923] flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#635BFF]" /> Verified Identity Credentials
+          <h4 className="font-bold text-xs text-[#0c0a09] flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-[#b4552d]" /> Verified Identity Credentials
           </h4>
-          <p className="text-[11px] text-[#667085] mt-0.5">
-            Secure Aadhaar & PAN verification powered by Surepass KYC.
+          <p className="text-[11px] text-[#78716c] mt-0.5">
+            Secure Aadhaar &amp; PAN verification powered by Surepass KYC.
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -65,68 +66,74 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
       </div>
 
       {/* 1. Aadhaar Card (DigiLocker Flow) */}
-      <div className={`rounded-2xl p-4 border transition-all ${
-        user?.aadhaar_verified ? 'bg-[#ECFDF3]/50 border-[#12B76A]/30' : 'bg-white border-[#E7E9EE]'
-      }`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
-              user?.aadhaar_verified ? 'bg-[#12B76A]/10 text-[#12B76A]' : 'bg-[#635BFF]/10 text-[#635BFF]'
-            }`}>
-              <ShieldCheck className="w-4 h-4" />
+      <div className="rounded-2xl p-4 border border-[#e7e5e4] bg-white shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#fafafa] border border-[#e7e5e4] flex items-center justify-center text-[#0c0a09] shadow-2xs">
+              <Fingerprint className="w-4 h-4 text-[#0c0a09]" />
             </div>
             <div>
-              <h5 className="font-extrabold text-xs text-[#171923]">Aadhaar Verification</h5>
-              <p className="text-[11px] text-[#667085]">
+              <h5 className="font-bold text-xs text-[#0c0a09]">Aadhaar Verification</h5>
+              <p className="text-[11px] text-[#78716c]">
                 {user?.aadhaar_verified ? 'Verified via government DigiLocker' : 'Instant identity confirmation via DigiLocker'}
               </p>
             </div>
           </div>
-          <VerificationBadge type="aadhaar" status={user?.aadhaar_verified ? 'VERIFIED' : 'NOT_STARTED'} />
+          <VerificationBadge type="aadhaar" status={user?.aadhaar_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
         </div>
 
         {user?.aadhaar_verified ? (
-          <div className="bg-white/80 border border-[#12B76A]/20 rounded-xl p-3 space-y-1.5 text-xs">
+          <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-xl p-3.5 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[#667085] text-[11px] font-medium">Aadhaar Number:</span>
-              <span className="font-mono font-bold text-[#171923] tracking-wider">{user.aadhaar_masked || 'XXXXXXXX1234'}</span>
+              <span className="text-[#78716c] text-[11px] font-medium">Aadhaar Number:</span>
+              <span className="font-mono font-bold text-[#0c0a09] tracking-wider">{user.aadhaar_masked || 'XXXXXXXX9999'}</span>
             </div>
             {user.aadhaar_registered_name && (
               <div className="flex items-center justify-between">
-                <span className="text-[#667085] text-[11px] font-medium">Verified Holder:</span>
-                <span className="font-bold text-[#171923]">{user.aadhaar_registered_name}</span>
+                <span className="text-[#78716c] text-[11px] font-medium">Verified Holder:</span>
+                <span className="font-bold text-[#0c0a09]">{user.aadhaar_registered_name}</span>
               </div>
             )}
             {user.aadhaar_verified_at && (
               <div className="flex items-center justify-between">
-                <span className="text-[#667085] text-[11px] font-medium">Verified On:</span>
-                <span className="text-[#667085] font-medium">
-                  {new Date(user.aadhaar_verified_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                <span className="text-[#78716c] text-[11px] font-medium">Verified on:</span>
+                <span className="text-[#78716c] font-medium">
+                  {new Date(user.aadhaar_verified_at).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
                 </span>
               </div>
             )}
+            <div className="flex items-center gap-1.5 text-emerald-800 text-[11px] font-semibold pt-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>DigiLocker Certified via Government Gateway</span>
+            </div>
           </div>
         ) : (
           <div className="space-y-3 pt-1">
             {aadhaarError && (
-              <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-2.5 rounded-xl font-medium">
+              <p className="text-[#ba1a1a] text-xs bg-[#ffdad6]/40 border border-[#ffdad6] p-2.5 rounded-xl font-medium">
                 {aadhaarError}
               </p>
             )}
-            <label className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#F8F9FC] border border-[#E7E9EE] cursor-pointer text-xs text-[#667085]">
-              <input
-                type="checkbox"
-                checked={aadhaarConsent}
-                onChange={(e) => {
-                  setAadhaarConsent(e.target.checked);
-                  if (aadhaarError) setAadhaarError('');
-                }}
-                className="mt-0.5 rounded border-[#D0D5DD] text-[#635BFF] focus:ring-[#635BFF]"
-              />
-              <span>
-                I hereby authorize Collaborative Group Rewards to verify my Aadhaar identity via Surepass DigiLocker for rewards eligibility.
-              </span>
-            </label>
+            <div className="bg-[#fafafa] p-3 rounded-xl border border-[#e7e5e4] space-y-2">
+              <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#78716c] select-none">
+                <input
+                  type="checkbox"
+                  checked={aadhaarConsent}
+                  onChange={(e) => {
+                    setAadhaarConsent(e.target.checked);
+                    if (aadhaarError) setAadhaarError('');
+                  }}
+                  className="rounded border-[#e7e5e4] text-[#0c0a09] focus:ring-[#0c0a09] mt-0.5 shrink-0"
+                />
+                <span className="leading-relaxed text-[11px]">
+                  I consent to sharing my Aadhaar identity details with Surepass and DigiLocker for platform verification.
+                </span>
+              </label>
+            </div>
             <Button
               type="button"
               variant="primary"
@@ -134,7 +141,7 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
               loading={aadhaarLoading}
               disabled={aadhaarLoading || !aadhaarConsent}
               onClick={handleInitiateAadhaar}
-              className="w-full"
+              className="w-full justify-center bg-[#0c0a09] hover:bg-neutral-800 text-white text-xs font-bold"
               icon={<ExternalLink className="w-3.5 h-3.5" />}
             >
               Verify Aadhaar via DigiLocker
@@ -143,60 +150,50 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
         )}
       </div>
 
-      {/* 2. PAN Card (Surepass Comprehensive Flow) */}
-      <div className={`rounded-2xl p-4 border transition-all ${
-        user?.pan_verified ? 'bg-[#ECFDF3]/50 border-[#12B76A]/30' : 'bg-white border-[#E7E9EE]'
-      }`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
-              user?.pan_verified ? 'bg-[#12B76A]/10 text-[#12B76A]' : 'bg-[#635BFF]/10 text-[#635BFF]'
-            }`}>
-              <ShieldCheck className="w-4 h-4" />
+      {/* 2. PAN Card Section */}
+      <div className="rounded-2xl p-4 border border-[#e7e5e4] bg-white shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#fafafa] border border-[#e7e5e4] flex items-center justify-center text-[#0c0a09] shadow-2xs">
+              <CreditCard className="w-4 h-4 text-[#b4552d]" />
             </div>
             <div>
-              <h5 className="font-extrabold text-xs text-[#171923]">PAN Verification</h5>
-              <p className="text-[11px] text-[#667085]">
-                {user?.pan_verified ? 'Identity verified via government registry' : 'Direct verification with Surepass PAN Comprehensive'}
+              <h5 className="font-bold text-xs text-[#0c0a09]">Income Tax PAN Verification</h5>
+              <p className="text-[11px] text-[#78716c]">
+                {user?.pan_verified ? 'Verified with NSDL / ITD Database' : 'Verify your permanent account number'}
               </p>
             </div>
           </div>
-          <VerificationBadge type="pan" status={user?.pan_verified ? 'VERIFIED' : 'NOT_STARTED'} />
+          <VerificationBadge type="pan" status={user?.pan_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
         </div>
 
         {user?.pan_verified ? (
-          <div className="bg-white/80 border border-[#12B76A]/20 rounded-xl p-3 space-y-1.5 text-xs">
+          <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-xl p-3.5 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[#667085] text-[11px] font-medium">PAN Number:</span>
-              <span className="font-mono font-bold text-[#171923] tracking-wider">{user.pan_masked}</span>
+              <span className="text-[#78716c] text-[11px] font-medium">PAN Number:</span>
+              <span className="font-mono font-bold text-[#0c0a09] tracking-wider">{user.pan_masked || 'EMTPP••••H'}</span>
             </div>
             {user.pan_registered_name && (
               <div className="flex items-center justify-between">
-                <span className="text-[#667085] text-[11px] font-medium">Registered Name:</span>
-                <span className="font-bold text-[#171923]">{user.pan_registered_name}</span>
+                <span className="text-[#78716c] text-[11px] font-medium">Taxpayer Name:</span>
+                <span className="font-bold text-[#0c0a09]">{user.pan_registered_name}</span>
               </div>
             )}
-            <div className="pt-2 border-t border-[#12B76A]/20 mt-1.5 flex justify-end">
-              <button
-                type="button"
-                onClick={onOpenCreditModal}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#635BFF] hover:text-[#4F46E5] hover:underline cursor-pointer"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>View PAN Financial & Credit Insights →</span>
-              </button>
+            <div className="flex items-center gap-1.5 text-emerald-800 text-[11px] font-semibold pt-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>NSDL Verified &amp; Taxpayer Match Active</span>
             </div>
           </div>
         ) : (
           <div className="space-y-3 pt-1">
             {profilePanError && (
-              <p className="text-[#F04438] text-xs bg-[#F04438]/10 p-2.5 rounded-xl font-medium">
+              <p className="text-[#ba1a1a] text-xs bg-[#ffdad6]/40 border border-[#ffdad6] p-2.5 rounded-xl font-medium">
                 {profilePanError}
               </p>
             )}
             {profilePanSuccess && (
-              <p className="text-[#12B76A] text-xs bg-[#12B76A]/10 p-2.5 rounded-xl font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> {profilePanSuccess}
+              <p className="text-emerald-800 text-xs bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl font-medium flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {profilePanSuccess}
               </p>
             )}
             <div className="flex gap-2">
@@ -209,7 +206,7 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
                 }}
                 placeholder="ABCDE1234A"
                 maxLength={10}
-                className="flex-1 bg-white border border-[#E7E9EE] focus:border-[#635BFF] rounded-xl px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF]"
+                className="flex-1 bg-white border border-[#e7e5e4] focus:border-[#0c0a09] rounded-xl px-3.5 py-2.5 text-xs font-mono uppercase tracking-wider text-[#0c0a09] focus:outline-none focus:ring-2 focus:ring-[#0c0a09]"
               />
               <Button
                 type="button"
@@ -218,6 +215,7 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
                 loading={profilePanLoading}
                 disabled={profilePanLoading || !profilePanInput.trim()}
                 onClick={handleVerifyProfilePan}
+                className="bg-[#0c0a09] hover:bg-neutral-800 text-white font-bold text-xs"
               >
                 Verify PAN
               </Button>
@@ -226,32 +224,32 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
         )}
       </div>
 
-      {/* 3. Credit Information Launcher Card */}
-      <div className="rounded-2xl p-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white border border-indigo-800/40 shadow-sm flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 border border-indigo-400/30">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div>
-            <h5 className="font-extrabold text-xs text-white">Credit Bureau Overview</h5>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              View authorized score and account liability (consent required).
-            </p>
-          </div>
+      {/* 3. Credit Insights Card */}
+      <div className="bg-[#fafafa] rounded-2xl p-4 border border-[#e7e5e4] flex items-center justify-between gap-4 shadow-2xs">
+        <div>
+          <h5 className="font-bold text-xs text-[#0c0a09]">Credit Bureau Overview</h5>
+          <p className="text-[11px] text-[#78716c] mt-0.5">
+            Real-time bureau credit score, repayment ratio &amp; account mix.
+          </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={onOpenCreditModal}
-          className="bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5"
+          className="text-xs bg-[#0c0a09] hover:bg-neutral-800 text-white border-transparent font-bold shrink-0"
         >
-          <span>View Credit</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </button>
+          View Credit
+        </Button>
       </div>
 
-      {/* Footer */}
-      <div className="pt-3 border-t border-[#E7E9EE] flex justify-end">
-        <Button variant="primary" size="sm" onClick={onClose}>
+      <div className="pt-2 border-t border-[#e7e5e4] flex justify-end">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onClose}
+          className="text-xs"
+        >
           Close
         </Button>
       </div>

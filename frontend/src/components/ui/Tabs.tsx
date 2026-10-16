@@ -23,7 +23,7 @@ export function Tabs<T extends string>({
   return (
     <div
       role="tablist"
-      className={`flex items-center gap-1.5 bg-[#F2F4F7] p-1.5 rounded-2xl ${className}`}
+      className={`flex items-center gap-1 bg-[#f5f5f4] p-1.5 rounded-2xl border border-[#e7e5e4] ${className}`}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
@@ -34,10 +34,10 @@ export function Tabs<T extends string>({
             aria-selected={isActive}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               isActive
-                ? 'bg-white text-[#635BFF] shadow-xs'
-                : 'text-[#667085] hover:text-[#171923]'
+                ? 'bg-white text-[#0c0a09] shadow-xs font-semibold'
+                : 'text-[#57534e] hover:text-[#0c0a09] hover:bg-black/[0.02]'
             }`}
           >
             {tab.icon && <span className="shrink-0">{tab.icon}</span>}

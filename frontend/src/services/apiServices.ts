@@ -19,6 +19,7 @@ import type {
   AadhaarVerifyResponse,
   CreditProfile,
   CreditReportRequest,
+  DetailedCreditReport,
 } from '../types';
 
 // Centralized Auth API Service
@@ -96,6 +97,12 @@ export const creditApi = {
     api.get<CreditProfile>('/v1/credit/profile/'),
   requestReport: (data: CreditReportRequest) =>
     api.post<CreditProfile>('/v1/credit/report/', data),
+  getScore: (data: CreditReportRequest) =>
+    api.post<CreditProfile>('/v1/credit/score/', data),
+  getFullReport: () =>
+    api.get<DetailedCreditReport>('/v1/credit/full-report/'),
+  requestFullReport: (data: CreditReportRequest) =>
+    api.post<DetailedCreditReport>('/v1/credit/full-report/', data),
 };
 
 // Centralized PAN Verification API Service (Backwards compatibility)

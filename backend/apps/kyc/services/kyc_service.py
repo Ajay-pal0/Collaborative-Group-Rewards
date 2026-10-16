@@ -11,6 +11,7 @@ from apps.kyc.models import (
     VerificationConsent,
     VerificationStatus,
     VerificationType,
+    VerificationAttempt,
 )
 from apps.kyc.services.surepass_service import SurepassIntegrationService
 from apps.users.models import User, PanVerification
@@ -176,13 +177,27 @@ def verify_user_pan(
 
         status_before = record.status
 
+        now = timezone.now()
+        record.last_attempted_at = now
+
         # Execute Surepass PAN Comprehensive API call
         result = surepass_service.verify_pan_comprehensive(clean_pan)
 
         if not result['success']:
             record.status = VerificationStatus.FAILED
             record.error_message = result.get('error', 'PAN verification failed.')
+            record.failure_code = str(result.get('status_code', 'FAILED'))
             record.save()
+
+            VerificationAttempt.objects.create(
+                verification=record,
+                user=locked_user,
+                verification_type=VerificationType.PAN,
+                status='FAILED',
+                provider='SUREPASS',
+                ip_address=ip_address,
+                sanitized_error=record.error_message[:250],
+            )
 
             IdentityVerificationAudit.objects.create(
                 verification=record,
@@ -209,7 +224,6 @@ def verify_user_pan(
             }
 
         # Successful verification
-        now = timezone.now()
         record.status = VerificationStatus.VERIFIED
         record.provider = 'SUREPASS'
         record.provider_reference = result.get('provider_reference', '')
@@ -218,7 +232,18 @@ def verify_user_pan(
         record.metadata = result.get('metadata', {})
         record.verified_at = now
         record.error_message = ''
+        record.failure_code = ''
         record.save()
+
+        VerificationAttempt.objects.create(
+            verification=record,
+            user=locked_user,
+            verification_type=VerificationType.PAN,
+            status='SUCCESS',
+            provider='SUREPASS',
+            provider_reference=record.provider_reference,
+            ip_address=ip_address,
+        )
 
         # Keep legacy PanVerification table updated for backwards compatibility
         legacy_rec, _ = PanVerification.objects.get_or_create(user=locked_user)
@@ -328,12 +353,25 @@ def initiate_user_aadhaar(
         )
 
         # Call Surepass to initialize DigiLocker session
+        now = timezone.now()
+        record.last_attempted_at = now
         init_res = surepass_service.initiate_digilocker(target_callback)
 
         if not init_res['success']:
             record.status = VerificationStatus.FAILED
             record.error_message = init_res.get('error', 'Failed to initiate DigiLocker session.')
+            record.failure_code = str(init_res.get('status_code', 'FAILED'))
             record.save()
+
+            VerificationAttempt.objects.create(
+                verification=record,
+                user=locked_user,
+                verification_type=VerificationType.AADHAAR,
+                status='FAILED',
+                provider='SUREPASS',
+                ip_address=ip_address,
+                sanitized_error=record.error_message[:250],
+            )
 
             IdentityVerificationAudit.objects.create(
                 verification=record,
@@ -355,7 +393,18 @@ def initiate_user_aadhaar(
         # Update record to PENDING
         record.status = VerificationStatus.PENDING
         record.provider_reference = init_res.get('client_id', '')
+        record.failure_code = ''
         record.save()
+
+        VerificationAttempt.objects.create(
+            verification=record,
+            user=locked_user,
+            verification_type=VerificationType.AADHAAR,
+            status='INITIATED',
+            provider='SUREPASS',
+            provider_reference=record.provider_reference,
+            ip_address=ip_address,
+        )
 
         IdentityVerificationAudit.objects.create(
             verification=record,
@@ -489,13 +538,28 @@ def confirm_user_aadhaar(
 
         status_before = record.status
 
+        now = timezone.now()
+        record.last_attempted_at = now
+
         # Query Surepass DigiLocker status
         result = surepass_service.fetch_digilocker_status(effective_client_id)
 
         if not result['success']:
             record.status = VerificationStatus.FAILED
             record.error_message = result.get('error', 'Aadhaar verification was not confirmed.')
+            record.failure_code = str(result.get('status_code', 'FAILED'))
             record.save()
+
+            VerificationAttempt.objects.create(
+                verification=record,
+                user=locked_user,
+                verification_type=VerificationType.AADHAAR,
+                status='FAILED',
+                provider='SUREPASS',
+                provider_reference=effective_client_id,
+                ip_address=ip_address,
+                sanitized_error=record.error_message[:250],
+            )
 
             IdentityVerificationAudit.objects.create(
                 verification=record,
@@ -522,14 +586,24 @@ def confirm_user_aadhaar(
                 'status_code': 400,
             }
 
-        now = timezone.now()
         record.status = VerificationStatus.VERIFIED
         record.masked_id = result.get('masked_id', 'XXXXXXXX0000')
         record.registered_name = result.get('full_name', '')
         record.metadata = result.get('metadata', {})
         record.verified_at = now
         record.error_message = ''
+        record.failure_code = ''
         record.save()
+
+        VerificationAttempt.objects.create(
+            verification=record,
+            user=locked_user,
+            verification_type=VerificationType.AADHAAR,
+            status='SUCCESS',
+            provider='SUREPASS',
+            provider_reference=effective_client_id,
+            ip_address=ip_address,
+        )
 
         IdentityVerificationAudit.objects.create(
             verification=record,
