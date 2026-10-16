@@ -163,11 +163,12 @@ def claim_benefit(group, benefit, user):
         return existing
 
 
-def complete_profile(group, member):
+def complete_profile(group, member, name: str | None = None, phone: str | None = None):
     """
     Awards PROFILE_COMPLETED points for a member in a group.
     Idempotent by member + group context.
     Profile Completion Bonus can only be added once user is Verified.
+    Optionally updates user's name and phone atomically.
     """
     if not getattr(member.user, 'pan_verified', False):
         raise ValueError('Profile Completion Bonus can only be added once user is Verified. Please verify your PAN first.')
@@ -182,6 +183,17 @@ def complete_profile(group, member):
     points = rule.points if rule else 50
 
     with transaction.atomic():
+        user = member.user
+        updated = False
+        if name and name.strip() and name.strip() != user.name:
+            user.name = name.strip()
+            updated = True
+        if phone is not None and phone.strip() != user.phone:
+            user.phone = phone.strip()
+            updated = True
+        if updated:
+            user.save()
+
         tx = PointTransaction.objects.create(
             group=group,
             member=member,
@@ -191,7 +203,7 @@ def complete_profile(group, member):
             idempotency_key=key,
         )
         _increment_group_cached_points(group, points)
-        user_name = member.user.name or member.user.email or 'Member'
+        user_name = user.name or user.email or 'Member'
         message = f'{user_name} completed profile details (+{points} pts)'
         record_activity(
             group=group,

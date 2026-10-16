@@ -1,0 +1,77 @@
+/**
+ * Collaborative Group Rewards - Design Tokens
+ * Premium fintech SaaS aesthetic
+ */
+
+:root {
+  /* Brand Primary */
+  --c-primary: #635BFF;
+  --c-primary-hover: #4F46E5;
+  --c-primary-light: #F0EFFF;
+  --c-primary-subtle: rgba(99, 91, 255, 0.08);
+  --c-primary-border: rgba(99, 91, 255, 0.25);
+
+  /* Gold / Rewards */
+  --c-gold: #F5B942;
+  --c-gold-hover: #E0A026;
+  --c-gold-light: #FEF8E7;
+  --c-gold-subtle: rgba(245, 185, 66, 0.12);
+  --c-gold-border: rgba(245, 185, 66, 0.35);
+
+  /* Neutrals & Surfaces */
+  --c-page-bg: #F8F9FC;
+  --c-surface: #FFFFFF;
+  --c-surface-hover: #F9FAFB;
+  --c-surface-secondary: #F2F4F7;
+  --c-surface-tertiary: #EAECF0;
+
+  /* Typography Colors */
+  --c-text-primary: #171923;
+  --c-text-secondary: #667085;
+  --c-text-muted: #98A2B3;
+  --c-text-inverse: #FFFFFF;
+
+  /* Borders & Dividers */
+  --c-border: #E7E9EE;
+  --c-border-subtle: #F2F4F7;
+  --c-border-strong: #D0D5DD;
+
+  /* Semantic Feedback */
+  --c-success: #12B76A;
+  --c-success-light: #ECFDF3;
+  --c-success-border: rgba(18, 183, 106, 0.3);
+  --c-success-text: #027A48;
+
+  --c-warning: #F79009;
+  --c-warning-light: #FFFAEB;
+  --c-warning-border: rgba(247, 144, 9, 0.3);
+  --c-warning-text: #B54708;
+
+  --c-error: #F04438;
+  --c-error-light: #FEF3F2;
+  --c-error-border: rgba(240, 68, 56, 0.3);
+  --c-error-text: #B42318;
+
+  --c-info: #2E90FA;
+  --c-info-light: #EFF8FF;
+  --c-info-border: rgba(46, 144, 250, 0.3);
+  --c-info-text: #175CD3;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 4px 14px -2px rgba(16, 24, 40, 0.08), 0 2px 6px -2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 28px -4px rgba(16, 24, 40, 0.12), 0 4px 8px -2px rgba(16, 24, 40, 0.06);
+  --shadow-xl: 0 20px 40px -6px rgba(16, 24, 40, 0.14), 0 8px 16px -4px rgba(16, 24, 40, 0.08);
+  --shadow-primary: 0 4px 16px rgba(99, 91, 255, 0.24);
+  --shadow-gold: 0 4px 16px rgba(245, 185, 66, 0.22);
+}

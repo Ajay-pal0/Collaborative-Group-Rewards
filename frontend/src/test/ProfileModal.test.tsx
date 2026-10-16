@@ -66,10 +66,10 @@ describe('ProfileModal Component', () => {
       </AuthProvider>
     );
 
-    const editTab = screen.getByText('Edit Profile Details');
+    const editTab = await screen.findByText('Edit Profile Details');
     fireEvent.click(editTab);
 
-    const submitBtn = screen.getByRole('button', { name: /Save Profile & Claim/i });
+    const submitBtn = await screen.findByRole('button', { name: /Save Profile & Claim/i });
     expect(submitBtn).toBeInTheDocument();
   });
 });

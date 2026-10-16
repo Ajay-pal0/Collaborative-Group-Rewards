@@ -169,14 +169,26 @@ class SurepassIntegrationService:
         Returns the Digiboost SDK token, authorization URL, and session client_id.
         """
         url = f'{self.base_url}/api/v1/digilocker/initialize'
-        payload = {
+        payload: dict[str, Any] = {
             'data': {
                 'signup_flow': True,
-                'skip_main_screen': False,
+                'skip_main_screen': True,
             }
         }
+
+        # Surepass Cloudflare/Imperva WAF rejects requests containing 'localhost', '127.0.0.1',
+        # or private IP ranges with HTTP 403 Forbidden to prevent SSRF vulnerabilities.
+        # Only attach redirect_url / callback_url when it points to a public, non-loopback domain.
         if redirect_url:
-            payload['callback_url'] = redirect_url
+            cleaned_url = str(redirect_url).strip()
+            lower_url = cleaned_url.lower()
+            is_loopback = any(
+                host in lower_url
+                for host in ['localhost', '127.0.0.1', '0.0.0.0', '192.168.', '10.', '172.16.']
+            )
+            if not is_loopback and (lower_url.startswith('https://') or lower_url.startswith('http://')):
+                payload['data']['redirect_url'] = cleaned_url
+                payload['callback_url'] = cleaned_url
 
         logger.info("Initiating Surepass DigiLocker SDK flow | URL: %s", url)
 
@@ -222,10 +234,12 @@ class SurepassIntegrationService:
             provider_err = None
             if isinstance(response.data, dict):
                 provider_err = response.data.get('message') or response.data.get('error')
+            elif isinstance(response.data, str) and '403' in response.data:
+                provider_err = 'Surepass WAF rejected request (HTTP 403 Forbidden). Ensure callback URLs do not contain localhost or private IPs.'
             return {
                 'success': False,
                 'error': provider_err or 'Failed to initiate DigiLocker session.',
-                'status_code': 400,
+                'status_code': response.status_code if (response.status_code and response.status_code < 500) else 400,
                 'response': response,
             }
 

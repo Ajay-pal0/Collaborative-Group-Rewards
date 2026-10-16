@@ -68,28 +68,38 @@ Benefit Unlock & Activity Feed Phase
 
 ---
 
-## Architecture
+## Architecture & Design System
 
+### Visual & Design System
+The frontend is built with a modern SaaS fintech visual language:
+- **Design Tokens**: Standardized CSS variables defined in [tokens.css](frontend/src/styles/tokens.css) including brand `#635BFF`, background `#F8F9FC`, card surface `#FFFFFF`, border `#E7E9EE`, and semantic status tokens (`#12B76A` emerald success, `#F5B942` gold milestones, `#F04438` error).
+- **Reusable Primitives**: Modular UI components in `frontend/src/components/ui/` (`Button`, `Badge`, `Card`, `Input`, `ProgressBar`, `Tabs`).
+- **Feature Modularization**: Decomposed monolithic views into feature-driven modules under `frontend/src/features/` (`auth`, `dashboard`, `profile`, `credit`).
+
+### High-Level Architecture
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     React 19 Frontend                   │
-│   (Vite + TypeScript + Tailwind CSS v4 + Axios + Lucide)│
-└────────────────────────────┬────────────────────────────┘
-                             │ REST API / JWT
-┌────────────────────────────▼────────────────────────────┐
-│                    Django 6.1 Backend                   │
-│   ┌─────────────────────────────────────────────────┐   │
-│   │ Apps: Users | Groups | Rewards | Activities     │   │
-│   ├─────────────────────────────────────────────────┤   │
-│   │ Service Layer: create_group, award_points,      │   │
-│   │ complete_task, claim_benefit, join_group        │   │
-│   └─────────────────────────────────────────────────┘   │
-└────────────────────────────┬────────────────────────────┘
-                             │ ORM / SQL Transactions
-┌────────────────────────────▼────────────────────────────┐
-│                  PostgreSQL 15 Database                 │
-│   (Unique Constraints, Foreign Keys, select_for_update) │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        React 19 + TypeScript Frontend                  │
+│   ├── features/ (auth, dashboard, profile, credit)                     │
+│   ├── components/ui/ (Button, Badge, Card, Input, ProgressBar, Tabs)   │
+│   ├── services/ (apiServices, auth, kyc, credit)                       │
+│   └── styles/ (tokens.css, index.css)                                  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ REST API / JWT
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         Django 6.1 REST Backend                        │
+│   ├── Apps: users | groups | rewards | kyc | credit | activities       │
+│   ├── Selectors Layer: apps/rewards/selectors.py,                      │
+│   │                    apps/groups/selectors.py                        │
+│   ├── Service Layer: create_group, award_points, complete_task,        │
+│   │                  claim_benefit, join_group, complete_profile       │
+│   └── Integrations: Surepass KYC, DigiLocker Aadhaar, Experian Credit  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ ORM / SQL Transactions
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         PostgreSQL 15 Database                         │
+│   (Unique Constraints, Foreign Keys, select_for_update, Idempotency)   │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -99,6 +109,7 @@ Benefit Unlock & Activity Feed Phase
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS v4, Axios, Lucide React, Vitest.
 - **Backend**: Django 6.1, Django REST Framework 3.18, djangorestframework-simplejwt, Pytest / Django Test Runner.
 - **Database**: PostgreSQL 15 (Docker containerized) with atomic transaction blocks and row locking.
+- **Identity & Credit Integrations**: Surepass DigiLocker Aadhaar KYC, PAN Comprehensive registry check, and Experian Credit profile aggregation.
 - **DevOps / Orchestration**: Docker Compose multi-container setup.
 
 ---
@@ -113,9 +124,9 @@ Benefit Unlock & Activity Feed Phase
  │ email (UQ)    │          │ group_id (FK) │          │ name          │
  │ name          │          │ user_id (FK)  │          │ group_type    │
  │ phone         │          │ role          │          │ created_by(FK)│
- └───────────────┘          │ status        │          │ cached_points │
-                            └───────┬───────┘          └───────┬───────┘
-                                    │ 1                        │ 1
+ │ pan_verified  │          │ status        │          │ cached_points │
+ │ aadhaar_verif │          └───────┬───────┘          └───────┬───────┘
+ └───────────────┘                  │ 1                        │ 1
                                     │                          │
                                     │ *                        │ *
                             ┌───────▼───────────────┐          │
@@ -261,24 +272,36 @@ Every key event in a group records an auditable `Activity` log entry:
 
 ### Running Tests
 
-**Backend Test Suite**:
+**Backend Test Suite (Pytest / Docker)**:
 
 ```bash
+# Via Docker Compose container
+docker exec together_backend pytest
+
+# Or directly in virtual environment
 cd backend
 source venv/bin/activate
-python manage.py test backend/tests --noinput
+pytest
 ```
 
-*Executes 28 automated tests covering group creation, invitation lifecycle, collaborative reward logic, task idempotency, multi-threaded race conditions, profile completion, and IDOR authorization boundaries.*
+*Executes 71 automated tests across `test_groups.py`, `test_pan_verification.py`, `test_password_reset.py`, and `test_surepass_kyc_and_credit.py`, verifying atomic points calculation, selectors, services, KYC callbacks, and IDOR protection.*
 
-**Frontend Test Suite**:
+**Frontend Test Suite (Vitest)**:
 
 ```bash
 cd frontend
 npm test
 ```
 
-*Executes Vitest component and hook unit tests.*
+*Executes 17 automated tests covering PAN verification, Surepass KYC & Experian credit modals, profile workflows, password resets, and custom hooks.*
+
+**Frontend Lint & Build Checks**:
+
+```bash
+cd frontend
+npm run lint   # ESLint 0 errors, 0 warnings
+npm run build  # Vite production bundle build
+```
 
 ---
 

@@ -1,64 +1,78 @@
 @import "tailwindcss";
-
-:root {
-  --color-primary: #635BFF;
-  --color-primary-dark: #4F46E5;
-  --color-reward-gold: #F5B942;
-  --color-page-bg: #F8F9FC;
-  --color-surface: #FFFFFF;
-  --color-surface-secondary: #F2F4F7;
-  --color-text-primary: #171923;
-  --color-text-secondary: #667085;
-  --color-text-muted: #98A2B3;
-  --color-border: #E7E9EE;
-  --color-success: #12B76A;
-  --color-warning: #F79009;
-  --color-error: #F04438;
-  --color-info: #2E90FA;
-}
+@import "./styles/tokens.css";
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
   body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: var(--color-page-bg);
-    color: var(--color-text-primary);
+    background-color: var(--c-page-bg);
+    color: var(--c-text-primary);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom UI Utility Classes matching Design Spec */
+/* Reusable UI Utility Classes matching Design Spec */
 .btn-primary {
-  background-color: #635BFF;
+  background-color: var(--c-primary);
   color: #FFFFFF;
   font-weight: 600;
-  border-radius: 12px;
-  transition: all 0.15s ease-in-out;
+  border-radius: var(--radius-md);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-xs);
 }
 
-.btn-primary:hover {
-  background-color: #4F46E5;
-  box-shadow: 0 4px 12px rgba(99, 91, 255, 0.25);
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--c-primary-hover);
+  box-shadow: var(--shadow-primary);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn-secondary {
   background-color: #FFFFFF;
-  color: #171923;
-  border: 1px solid #E7E9EE;
+  color: var(--c-text-primary);
+  border: 1px solid var(--c-border);
   font-weight: 600;
-  border-radius: 12px;
-  transition: all 0.15s ease-in-out;
+  border-radius: var(--radius-md);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-xs);
 }
 
-.btn-secondary:hover {
-  background-color: #F2F4F7;
-  border-color: #D0D5DD;
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--c-surface-hover);
+  border-color: var(--c-border-strong);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .card-surface {
   background-color: #FFFFFF;
-  border: 1px solid #E7E9EE;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xs);
 }
 
 .card-surface-hover {
@@ -66,16 +80,26 @@
 }
 
 .card-surface-hover:hover {
-  border-color: #635BFF;
-  box-shadow: 0 8px 20px -4px rgba(99, 91, 255, 0.12);
+  border-color: rgba(99, 91, 255, 0.4);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .reward-card-gold {
   background: linear-gradient(135deg, #FFFDF5 0%, #FEF8E7 100%);
-  border: 1px solid #F5B942;
-  box-shadow: 0 4px 14px rgba(245, 185, 66, 0.18);
+  border: 1px solid var(--c-gold-border);
+  box-shadow: var(--shadow-gold);
 }
 
+/* Glassmorphism surface */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(231, 233, 238, 0.8);
+}
+
+/* Micro-animations */
 @keyframes pulse-subtle {
   0%, 100% {
     transform: scale(1);
@@ -102,4 +126,13 @@
 
 .animate-slide-up {
   animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
