@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, CheckCircle, Zap, Shield, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, CheckCircle, Shield, ArrowRight } from 'lucide-react';
 import { Button } from '../../../components/ui';
 
 interface LoginFormProps {
@@ -34,44 +34,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onContinueDigiLocker,
 }) => {
   const [rememberDays, setRememberDays] = useState(true);
-  const [copiedDemo, setCopiedDemo] = useState(false);
 
   const handleAutofillDemo = () => {
     setLoginEmail('ajaypal05192@gmail.com');
     setLoginPassword('DemoPass@2025');
     setLoginFieldErrors({});
-    setCopiedDemo(true);
-    setTimeout(() => setCopiedDemo(false), 2000);
   };
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail);
 
   return (
     <div className="space-y-4">
-      {/* Demo Account Callout */}
-      <div className="p-3 rounded-xl bg-[#f5f5f4] border border-[#e7e5e4] flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <Zap className="w-4 h-4 text-[#b4552d] shrink-0" />
-          <div className="truncate">
-            <span className="font-semibold text-[#0c0a09]">Quick Demo: </span>
-            <span className="text-[#78716c] font-mono">ajaypal05192@gmail.com</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={handleAutofillDemo}
-          className="text-[#b4552d] hover:text-[#9a4420] font-bold text-xs flex items-center gap-1 shrink-0 pl-2 cursor-pointer transition-colors"
-        >
-          {copiedDemo ? (
-            <span className="text-[#059669] flex items-center gap-0.5">
-              <CheckCircle className="w-3.5 h-3.5" /> Filled!
-            </span>
-          ) : (
-            <span>Fill Demo</span>
-          )}
-        </button>
-      </div>
-
       <form onSubmit={handleLogin} noValidate className="space-y-4">
         {loginError && (
           <div className="text-xs bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] p-3 rounded-xl font-medium animate-fade-in">
@@ -97,10 +70,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 setLoginEmail(e.target.value);
                 setLoginFieldErrors((p) => ({ ...p, email: '' }));
               }}
-              placeholder="you@tribewealth.in"
-              className={`block w-full pl-10 pr-10 py-2.5 bg-[#f8fafc] border rounded-xl text-[#0c0a09] text-sm placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white transition-all ${
-                loginFieldErrors.email ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
-              }`}
+              placeholder="you@example.com"
+              className={`block w-full pl-10 pr-10 py-2.5 bg-[#f8fafc] border rounded-xl text-[#0c0a09] text-sm placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white transition-all ${loginFieldErrors.email ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
+                }`}
             />
             {isEmailValid && (
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#059669]">
@@ -142,9 +114,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 setLoginFieldErrors((p) => ({ ...p, password: '' }));
               }}
               placeholder="••••••••••••"
-              className={`block w-full pl-10 pr-10 py-2.5 bg-[#f8fafc] border rounded-xl text-[#0c0a09] text-sm placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white transition-all ${
-                loginFieldErrors.password ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
-              }`}
+              className={`block w-full pl-10 pr-10 py-2.5 bg-[#f8fafc] border rounded-xl text-[#0c0a09] text-sm placeholder:text-[#a8a29e] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] focus:bg-white transition-all ${loginFieldErrors.password ? 'border-[#dc2626]' : 'border-[#e7e5e4] hover:border-[#d6d3d1]'
+                }`}
             />
             <button
               type="button"

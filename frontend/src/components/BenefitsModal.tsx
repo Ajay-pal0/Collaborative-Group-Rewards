@@ -142,7 +142,7 @@ export default function BenefitsModal({
         </div>
 
         {/* Benefits list Container */}
-        <div className="max-h-80 overflow-y-auto space-y-3 pr-1">
+        <div className="space-y-3">
           {filteredBenefits.length === 0 ? (
             <div className="text-center py-10 bg-[#fafafa] rounded-2xl border border-dashed border-[#e7e5e4] space-y-3">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-xs text-[#a8a29e]">

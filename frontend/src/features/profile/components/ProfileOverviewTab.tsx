@@ -82,7 +82,7 @@ export const ProfileOverviewTab: React.FC<ProfileOverviewTabProps> = ({
           </span>
         </div>
 
-        <div className="max-h-64 overflow-y-auto space-y-2.5 pr-1">
+        <div className="space-y-2.5">
           {userActivities.length === 0 ? (
             <div className="text-center py-8 bg-[#fafafa] rounded-2xl border border-dashed border-[#e7e5e4] space-y-2">
               <Zap className="w-6 h-6 text-[#a8a29e] mx-auto" />

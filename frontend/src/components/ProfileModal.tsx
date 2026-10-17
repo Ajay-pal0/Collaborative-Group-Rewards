@@ -8,6 +8,7 @@ import { extractErrorMessage } from '../lib/api';
 import VerificationBadge from './VerificationBadge';
 import CreditDashboardModal from './CreditDashboardModal';
 import { preOpenAuthWindow, openDigilockerInNewTab } from '../features/kyc/digiboostSdk';
+import { maskPan } from '../lib/masking';
 import {
   User as UserIcon,
   Activity as ActivityIcon,
@@ -79,7 +80,8 @@ export default function ProfileModal({
       if (res.data.success) {
         setProfilePanSuccess('PAN verified successfully!');
         showToast('PAN verified successfully! 🛡️', 'success');
-        const masked = res.data.data?.masked_id || res.data.data?.pan_masked;
+        const rawMasked = res.data.data?.masked_id || res.data.data?.pan_masked;
+        const masked = maskPan(rawMasked || cleanPan);
         const regName = res.data.data?.registered_name || res.data.data?.name;
         const verifiedAt = res.data.data?.verified_at || undefined;
         if (user) {
@@ -129,7 +131,7 @@ export default function ProfileModal({
       const confirmVerification = async (): Promise<boolean> => {
         try {
           const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
-          if (verifyRes.data.success) {
+          if (verifyRes.data.success && verifyRes.data.status === 'verified') {
             if (user) {
               updateUser({
                 ...user,
@@ -144,8 +146,7 @@ export default function ProfileModal({
             return true;
           }
           return false;
-        } catch (confirmErr) {
-          setAadhaarError(extractErrorMessage(confirmErr));
+        } catch {
           return false;
         }
       };
@@ -363,7 +364,6 @@ export default function ProfileModal({
               setProfilePanError={setProfilePanError}
               profilePanSuccess={profilePanSuccess}
               handleVerifyProfilePan={handleVerifyProfilePan}
-              onOpenCreditModal={() => setCreditModalOpen(true)}
             />
           ) : (
             <ProfileIdentityTab

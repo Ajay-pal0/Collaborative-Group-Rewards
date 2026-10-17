@@ -7,11 +7,12 @@ import {
   Check,
   PartyPopper,
   Lock,
-  ArrowUp,
   Gift,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
-import type { Group, UserPointsData } from '../../../types';
+import type { Group, UserPointsData, User } from '../../../types';
+import { calculateHighwayProgress } from '../../../lib/progress';
 
 interface MilestoneProgressSectionProps {
   selectedGroup: Group | null;
@@ -20,6 +21,7 @@ interface MilestoneProgressSectionProps {
   progressPercent: number;
   userPointsData?: UserPointsData | null;
   userName?: string;
+  user?: User | null;
   onRedeemPerks?: () => void;
 }
 
@@ -28,6 +30,7 @@ export const MilestoneProgressSection: React.FC<MilestoneProgressSectionProps> =
   totalPoints,
   userPointsData,
   userName = 'Member',
+  user,
   onRedeemPerks,
 }) => {
   // Milestone targets
@@ -39,9 +42,8 @@ export const MilestoneProgressSection: React.FC<MilestoneProgressSectionProps> =
     { name: 'Champion', points: 2000, key: 'champion' },
   ];
 
-  // Calculate percentage of 2,000 pts target
-  const maxTarget = 2000;
-  const highwayPercent = Math.min(100, Math.round((totalPoints / maxTarget) * 100));
+  // Calculate segmented percentage across milestone highway (0 -> 200 -> 500 -> 1000 -> 2000)
+  const highwayPercent = Math.min(100, Math.round(calculateHighwayProgress(totalPoints)));
   const remainingToChampion = Math.max(0, 2000 - totalPoints);
 
   // Active tier name
@@ -51,9 +53,12 @@ export const MilestoneProgressSection: React.FC<MilestoneProgressSectionProps> =
   else if (totalPoints >= 500) currentTier = 'Team Tier';
   else if (totalPoints >= 200) currentTier = 'Starter Tier';
 
-  const memberCount = selectedGroup?.members?.length || selectedGroup?.member_count || 4;
-  const userPts = userPointsData?.user_points || Math.round(totalPoints * 0.36);
-  const userPct = userPointsData?.user_contribution_pct || (totalPoints > 0 ? Math.round((userPts / totalPoints) * 100) : 36);
+  const memberCount = selectedGroup?.members?.length || selectedGroup?.member_count || 1;
+  const userPts = userPointsData?.user_points ?? 0;
+  const userPct = userPointsData?.user_contribution_pct ?? (totalPoints > 0 ? Math.round((userPts / totalPoints) * 100) : 0);
+  const isFullKyc = Boolean(user?.pan_verified && user?.aadhaar_verified);
+  const isPartialKyc = Boolean(user?.pan_verified || user?.aadhaar_verified);
+  const kycStatusLabel = isFullKyc ? '100% Verified' : isPartialKyc ? '50% Verified' : 'Action Required';
 
   return (
     <div className="space-y-6">
@@ -74,75 +79,104 @@ export const MilestoneProgressSection: React.FC<MilestoneProgressSectionProps> =
             </p>
           </div>
 
-          {/* Points Counter & Direct Redeem CTA */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-[#f8fafc] p-4 rounded-xl border border-[#e7e5e4]">
-            <div>
-              <div className="text-[11px] uppercase tracking-wider font-bold text-[#78716c]">
-                Group Pool Balance
-              </div>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-3xl font-extrabold text-[#0c0a09] tracking-tight">
-                  {totalPoints.toLocaleString()} PTS
-                </span>
-                <span className="inline-flex items-center text-xs font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full border border-[#a7f3d0]">
-                  <ArrowUp className="w-3.5 h-3.5" /> +18.4% this week
+          {/* Points Counter & Direct Redeem CTA Card */}
+          <div className="flex flex-col justify-between bg-gradient-to-br from-[#fffaf5] via-white to-[#fffaf5] text-[#0c0a09] p-5 sm:p-6 rounded-2xl border border-[#fed7aa]/80 shadow-[0_2px_12px_rgba(180,85,45,0.06)] w-full lg:w-[410px] shrink-0 gap-4">
+            {/* Header: Title & Tier Badge */}
+            <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#f5ede6]">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-[#fff7ed] border border-[#fed7aa] text-[#b4552d] flex items-center justify-center shrink-0">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-[#44403c] tracking-wide uppercase whitespace-nowrap">
+                  Group Pool Balance
                 </span>
               </div>
-              <div className="text-xs text-[#78716c] mt-1 font-medium">
-                Your Points: <span className="font-bold text-[#0c0a09]">{userPts} pts ({userPct}% share)</span>
-              </div>
+              <span className="inline-flex items-center text-[11px] font-bold text-[#b4552d] bg-[#fff7ed] border border-[#fed7aa] px-2.5 py-0.5 rounded-full shrink-0 shadow-2xs">
+                {currentTier} Tier
+              </span>
             </div>
 
-            <button
-              type="button"
-              onClick={onRedeemPerks}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#b4552d] hover:bg-[#9a4420] text-white text-xs font-bold transition-all shadow-xs self-stretch sm:self-center flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Gift className="w-4 h-4" />
-              <span>Redeem Perks</span>
-            </button>
+            {/* Middle: Big Points & Redeem Perks Button */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0c0a09] font-mono">
+                    {totalPoints.toLocaleString()}
+                  </span>
+                  <span className="text-xs font-bold text-[#78716c] uppercase tracking-wider">PTS</span>
+                </div>
+                <span className="text-[11px] text-[#78716c] block mt-0.5">Collective reward balance</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={onRedeemPerks}
+                className="px-4 py-2.5 rounded-xl bg-[#0c0a09] hover:bg-neutral-800 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+              >
+                <Gift className="w-3.5 h-3.5 text-[#fed7aa]" />
+                <span>Redeem Perks</span>
+              </button>
+            </div>
+
+            {/* Bottom: Personal Contribution Progress Bar */}
+            <div className="pt-2 space-y-1.5 border-t border-[#f5ede6]">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#78716c] font-medium">Your Contribution</span>
+                <span className="font-bold text-[#0c0a09]">
+                  {userPts.toLocaleString()} pts <span className="text-[#b4552d] font-semibold">({userPct}%)</span>
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-[#f5f5f4] border border-[#e7e5e4] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#b4552d] to-[#d97706] rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, userPct))}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Quick Metrics Strip */}
-        <div className="mt-6 pt-6 border-t border-[#f0efed] grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#f5f5f4] flex items-center justify-center text-[#0c0a09]">
+        <div className="mt-6 pt-5 border-t border-[#f0efed] grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#fafaf9] border border-[#f0efed]/80">
+            <div className="w-9 h-9 rounded-xl bg-white border border-[#e7e5e4] flex items-center justify-center text-[#0c0a09] shadow-2xs shrink-0">
               <Users className="w-4 h-4" />
             </div>
-            <div>
-              <div className="font-bold text-sm text-[#0c0a09] leading-tight">{memberCount} Active</div>
-              <div className="text-[11px] text-[#78716c]">Tribe Members</div>
+            <div className="min-w-0">
+              <div className="font-bold text-sm text-[#0c0a09] leading-tight truncate">{memberCount} Active</div>
+              <div className="text-[11px] text-[#78716c] truncate">Tribe Members</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#fff7ed] flex items-center justify-center text-[#b4552d]">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#fafaf9] border border-[#f0efed]/80">
+            <div className="w-9 h-9 rounded-xl bg-[#fff7ed] border border-[#fed7aa] flex items-center justify-center text-[#b4552d] shadow-2xs shrink-0">
               <Award className="w-4 h-4" />
             </div>
-            <div>
-              <div className="font-bold text-sm text-[#0c0a09] leading-tight">{currentTier}</div>
-              <div className="text-[11px] text-[#78716c]">Current Status</div>
+            <div className="min-w-0">
+              <div className="font-bold text-sm text-[#0c0a09] leading-tight truncate">{currentTier}</div>
+              <div className="text-[11px] text-[#78716c] truncate">Current Status</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] flex items-center justify-center text-[#059669]">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#fafaf9] border border-[#f0efed]/80">
+            <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] border border-emerald-200 flex items-center justify-center text-[#059669] shadow-2xs shrink-0">
               <ShieldCheck className="w-4 h-4" />
             </div>
-            <div>
-              <div className="font-bold text-sm text-[#0c0a09] leading-tight">100% Verified</div>
-              <div className="text-[11px] text-[#78716c]">KYC Compliance</div>
+            <div className="min-w-0">
+              <div className="font-bold text-sm text-[#0c0a09] leading-tight truncate">{kycStatusLabel}</div>
+              <div className="text-[11px] text-[#78716c] truncate">KYC Compliance</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#f5f5f4] flex items-center justify-center text-[#d97706]">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#fafaf9] border border-[#f0efed]/80">
+            <div className="w-9 h-9 rounded-xl bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center text-[#d97706] shadow-2xs shrink-0">
               <Timer className="w-4 h-4" />
             </div>
-            <div>
-              <div className="font-bold text-sm text-[#0c0a09] leading-tight">14 Days</div>
-              <div className="text-[11px] text-[#78716c]">Until Next Epoch</div>
+            <div className="min-w-0">
+              <div className="font-bold text-sm text-[#0c0a09] leading-tight truncate">
+                {remainingToChampion > 0 ? `${remainingToChampion.toLocaleString()} PTS` : 'Max Reached'}
+              </div>
+              <div className="text-[11px] text-[#78716c] truncate">To Champion Tier</div>
             </div>
           </div>
         </div>
@@ -171,20 +205,25 @@ export const MilestoneProgressSection: React.FC<MilestoneProgressSectionProps> =
         {/* Stepped Horizontal Tracker Canvas */}
         <div className="pt-6 pb-2 px-2">
           <div className="relative">
-            {/* Background Track */}
-            <div className="h-2 w-full bg-[#e7e5e4] rounded-full overflow-hidden">
+            {/* Background Track running from center of first node to center of last node */}
+            <div className="absolute top-3 left-4 right-4 h-2 bg-[#e7e5e4] rounded-full overflow-hidden">
               {/* Active Fill */}
               <div
                 className="h-full bg-gradient-to-r from-[#fd8d60] via-[#f59e0b] to-[#d97706] rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, Math.max(4, highwayPercent))}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, highwayPercent))}%` }}
               />
             </div>
 
             {/* Milestones Points Nodes */}
-            <div className="relative -top-4 flex justify-between w-full">
-              {milestones.map((m) => {
+            <div className="relative flex justify-between w-full z-10">
+              {milestones.map((m, idx) => {
                 const isReached = totalPoints >= m.points;
-                const isCurrent = (m.points === 1000 && totalPoints >= 1000 && totalPoints < 2000) || (m.points === 2000 && totalPoints >= 2000);
+                const nextThreshold = milestones[idx + 1]?.points ?? Infinity;
+                const isCurrent = isReached && (
+                  m.key === 'champion'
+                    ? totalPoints >= 2000
+                    : totalPoints < nextThreshold
+                );
 
                 return (
                   <div key={m.key} className="flex flex-col items-center">

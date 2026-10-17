@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, CreditCard, CheckCircle2, ArrowRight } from 'lucide-react';
 import VerificationBadge from '../../../components/VerificationBadge';
 import { Button } from '../../../components/ui';
+import { maskPan } from '../../../lib/masking';
 
 interface SignupVerificationStepProps {
   signupVerificationTab: 'pan' | 'aadhaar';
@@ -178,8 +179,8 @@ export const SignupVerificationStep: React.FC<SignupVerificationStepProps> = ({
                   <VerificationBadge type="pan" status="VERIFIED" size="md" />
                 </div>
                 <h4 className="font-bold text-sm text-[#065f46]">✓ PAN Verified</h4>
-                <p className="text-xs font-semibold text-[#0c0a09] mt-1">Name: {panVerifiedData.name}</p>
-                <p className="text-[11px] font-mono text-[#78716c]">PAN: {panVerifiedData.pan_masked}</p>
+                <p className="text-xs font-semibold text-[#0c0a09] mt-1">Name: {panVerifiedData.name || 'Verified Citizen'}</p>
+                <p className="text-[11px] font-mono text-[#78716c]">PAN: {maskPan(panVerifiedData.pan_masked || signupPan)}</p>
               </div>
               <Button
                 variant="success"

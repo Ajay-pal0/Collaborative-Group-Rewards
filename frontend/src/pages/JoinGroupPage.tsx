@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
-  TrendingUp,
   Gift,
   Building2,
   Key,
@@ -87,7 +86,7 @@ export default function JoinGroupPage() {
 
   if (!invitation) return null;
 
-  const inviterName = invitation.created_by_name || 'Ajay';
+  const inviterName = invitation.created_by_name || 'Group Organizer';
   const groupInitials = invitation.group_name
     .split(' ')
     .map((w: string) => w[0])
@@ -108,7 +107,7 @@ export default function JoinGroupPage() {
               <div className="w-9 h-9 rounded-xl bg-[#0c0a09] flex items-center justify-center text-white shadow-xs">
                 <Shield className="w-5 h-5 fill-white/20 text-[#ffdcc3]" />
               </div>
-              <span className="font-extrabold text-base text-[#0c0a09]">TribeWealth</span>
+              <span className="font-extrabold text-base text-[#0c0a09]">Collaborative Group Rewards</span>
             </div>
 
             <span className="text-[#e7e5e4] hidden sm:inline">|</span>
@@ -197,65 +196,49 @@ export default function JoinGroupPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-[#fff7ed] text-[#b4552d] border border-[#fed7aa] text-xs font-bold shrink-0">
-                    Tier 3: Premium Group
+                  <span className="px-2.5 py-1 rounded-full bg-[#fff7ed] text-[#b4552d] border border-[#fed7aa] text-xs font-bold shrink-0 capitalize">
+                    {invitation.group_type || 'Private'} Group
                   </span>
                 </div>
 
                 {/* Key Stats Matrix */}
                 <div className="grid grid-cols-2 gap-4 py-2 border-b border-[#f0efed]">
                   <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e7e5e4]">
-                    <span className="text-xs font-semibold text-[#78716c] block">Active Pool Balance</span>
+                    <span className="text-xs font-semibold text-[#78716c] block">Group Category</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-xl font-black text-[#0c0a09]">1,250 PTS</span>
-                      <span className="text-xs text-[#059669] font-bold flex items-center">
-                        <TrendingUp className="w-3.5 h-3.5" /> +18.4%
+                      <span className="text-base font-black text-[#0c0a09] capitalize">
+                        {invitation.group_type || 'Friends & Family'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-[#78716c]">Collective target: 2,000 PTS</span>
+                    <span className="text-[11px] text-[#78716c]">Collaborative Rewards Circle</span>
                   </div>
 
                   <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e7e5e4]">
-                    <span className="text-xs font-semibold text-[#78716c] block">Group Capacity</span>
+                    <span className="text-xs font-semibold text-[#78716c] block">Current Team Size</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-xl font-black text-[#0c0a09]">
-                        {invitation.member_count} Members
+                      <span className="text-base font-black text-[#0c0a09]">
+                        {invitation.member_count} {invitation.member_count === 1 ? 'Member' : 'Members'}
                       </span>
-                      <span className="text-xs text-[#78716c] font-medium">Max 6</span>
                     </div>
-                    <span className="text-[11px] text-[#78716c]">2 invitations pending</span>
+                    <span className="text-[11px] text-[#78716c]">Active collaborators</span>
                   </div>
                 </div>
 
                 {/* Verified Members Cluster */}
                 <div className="pt-1">
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-xs font-bold text-[#78716c]">Verified Members in Group</span>
+                    <span className="text-xs font-bold text-[#78716c]">Invited By</span>
                     <span className="text-[11px] text-[#059669] font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Bank-verified identity
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Verified Invite Token
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1.5 rounded-full border border-[#e7e5e4]">
-                      <div className="w-5 h-5 rounded-full bg-[#0c0a09] text-white text-[9px] font-bold flex items-center justify-center">
-                        AP
+                    <div className="flex items-center gap-1.5 bg-[#f8fafc] px-3 py-1.5 rounded-full border border-[#e7e5e4]">
+                      <div className="w-6 h-6 rounded-full bg-[#0c0a09] text-white text-[10px] font-bold flex items-center justify-center">
+                        {inviterName.charAt(0).toUpperCase()}
                       </div>
                       <span className="text-xs font-bold text-[#0c0a09]">{inviterName}</span>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-[#f5f5f4] rounded-full font-bold text-[#78716c]">Owner</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1.5 rounded-full border border-[#e7e5e4]">
-                      <div className="w-5 h-5 rounded-full bg-[#b4552d] text-white text-[9px] font-bold flex items-center justify-center">
-                        PS
-                      </div>
-                      <span className="text-xs font-bold text-[#0c0a09]">Priya Sharma</span>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-[#f5f5f4] rounded-full font-bold text-[#78716c]">Admin</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1.5 rounded-full border border-[#e7e5e4]">
-                      <div className="w-5 h-5 rounded-full bg-[#44403c] text-white text-[9px] font-bold flex items-center justify-center">
-                        RP
-                      </div>
-                      <span className="text-xs font-bold text-[#0c0a09]">Rohan Patel</span>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-[#f5f5f4] rounded-full font-bold text-[#78716c]">Member</span>
+                      <span className="text-[9px] px-2 py-0.5 bg-[#f5f5f4] rounded-full font-bold text-[#78716c]">Organizer</span>
                     </div>
                   </div>
                 </div>
@@ -452,9 +435,9 @@ export default function JoinGroupPage() {
       <footer className="bg-white border-t border-[#e7e5e4] mt-12 py-6">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#78716c]">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-[#0c0a09]">TribeWealth</span>
+            <span className="font-extrabold text-[#0c0a09]">Collaborative Group Rewards</span>
             <span>•</span>
-            <p>© 2026 TribeWealth Financial Technologies Inc. RBI regulated partner institutions.</p>
+            <p>© 2026 Collaborative Group Rewards Technologies Inc. RBI regulated partner institutions.</p>
           </div>
           <div className="flex items-center gap-4">
             <a href="#security" className="hover:text-[#0c0a09] transition-colors">Security Architecture</a>

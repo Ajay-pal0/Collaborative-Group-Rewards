@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
-import { kycApi } from '../../../services/apiServices';
+import { kycApi, authApi } from '../../../services/apiServices';
 import { extractErrorMessage } from '../../../lib/api';
+import { maskPan } from '../../../lib/masking';
 import {
   User as UserIcon,
   CreditCard,
@@ -38,17 +39,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const handleUpdateProfile = async (data: { name: string; phone?: string }) => {
     setLoading(true);
     try {
-      if (updateUser && user) {
-        updateUser({
-          ...user,
-          name: data.name,
-          phone: data.phone ?? user.phone,
-        });
+      const res = await authApi.updateProfile(data);
+      if (updateUser && res.data) {
+        updateUser(res.data);
       }
       showToast('Profile updated successfully!', 'success');
     } catch (err: unknown) {
-      showToast(extractErrorMessage(err), 'error');
-      throw err;
+      const msg = extractErrorMessage(err);
+      showToast(msg, 'error');
+      throw new Error(msg, { cause: err });
     } finally {
       setLoading(false);
     }
@@ -63,7 +62,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           updateUser({
             ...user,
             pan_verified: true,
-            pan_masked: res.data.data?.masked_id || `${pan.slice(0, 5)}••••${pan.slice(-1)}`,
+            pan_masked: maskPan(res.data.data?.masked_id || pan),
             pan_registered_name: res.data.data?.registered_name,
             pan_verified_at: res.data.data?.verified_at,
           });

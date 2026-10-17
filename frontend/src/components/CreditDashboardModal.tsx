@@ -50,6 +50,10 @@ export default function CreditDashboardModal({
     try {
       const res = await creditApi.getProfile();
       setProfile(res.data);
+      if (res.data.status === 'PENDING_PROVIDER_ACCESS' || res.data.status === 'FAILED') {
+        const err = res.data.error || res.data.status_message || res.data.message;
+        if (err) setErrorMsg(err);
+      }
     } catch (err) {
       setErrorMsg(extractErrorMessage(err));
     } finally {
@@ -81,11 +85,25 @@ export default function CreditDashboardModal({
       setProfile(res.data);
       if (res.data.status === 'COMPLETED') {
         showToast('Credit profile retrieved successfully!', 'success');
+      } else if (res.data.status === 'PENDING_PROVIDER_ACCESS' || res.data.status === 'FAILED') {
+        const err =
+          res.data.error ||
+          res.data.status_message ||
+          res.data.message ||
+          'Credit bureau API access is currently pending provisioning on this account.';
+        setErrorMsg(err);
+        showToast(err, 'error');
       } else {
-        showToast('Consent recorded! Provider access is being provisioned.', 'info');
+        showToast(
+          res.data.status_message ||
+            res.data.message ||
+            'Consent recorded! Provider access is being provisioned.',
+          'info'
+        );
       }
     } catch (err) {
       setErrorMsg(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), 'error');
     } finally {
       setRequesting(false);
     }
@@ -112,7 +130,7 @@ export default function CreditDashboardModal({
   const hasScore = Boolean(profile?.credit_score);
 
   return (
-    <Modal open={open} onClose={onClose} title="Financial & Credit Insights">
+    <Modal open={open} onClose={onClose} title="Financial & Credit Insights" maxWidth="max-w-2xl">
       <div className="space-y-4 text-[#0c0a09]">
         {/* Tab Switcher */}
         <div className="flex items-center gap-1.5 bg-[#f5f5f4] p-1.5 rounded-2xl border border-[#e7e5e4]">
@@ -195,6 +213,8 @@ export default function CreditDashboardModal({
                   score={profile?.credit_score}
                   scoreBand={profile?.score_band}
                   fetchedAt={profile?.last_report_date}
+                  status={profile?.status}
+                  statusMessage={profile?.error || profile?.status_message || profile?.message}
                 />
 
                 {profile && <CreditMetricsGrid profile={profile} />}

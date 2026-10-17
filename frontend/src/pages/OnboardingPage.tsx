@@ -84,27 +84,12 @@ export default function OnboardingPage() {
               <Shield className="w-5 h-5 fill-white/20 text-[#ffdcc3]" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-lg tracking-tight text-[#0c0a09]">TribeWealth</span>
-              <span className="hidden sm:inline-block bg-[#f5f5f4] text-[#78716c] text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-[#e7e5e4]">
-                Fintech Intelligence
-              </span>
+              <span className="font-extrabold text-lg tracking-tight text-[#0c0a09]">Collaborative Group Rewards</span>
             </div>
           </div>
 
-          {/* Center Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#78716c]">
-            <a href="#features" className="hover:text-[#0c0a09] transition-colors">Platform</a>
-            <a href="#security" className="hover:text-[#0c0a09] transition-colors">Security & Trust</a>
-            <a href="#milestones" className="hover:text-[#0c0a09] transition-colors">Group Milestones</a>
-            <a href="#help" className="hover:text-[#0c0a09] transition-colors">Help Center</a>
-          </nav>
-
           {/* Right Metadata & Security Node */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-[#f5f5f4] rounded-full border border-[#e7e5e4]">
-              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
-              <span className="text-[11px] font-semibold text-[#44403c]">Bureau Node Active</span>
-            </div>
             <div className="flex items-center gap-1.5 text-[#78716c] text-xs">
               <Lock className="w-3.5 h-3.5 text-[#10b981]" />
               <span className="hidden sm:inline font-medium">256-Bit SSL Secured</span>
@@ -243,21 +228,19 @@ export default function OnboardingPage() {
                 <div className="bg-[#f5f5f4] p-1 rounded-full flex items-center justify-between mb-6 border border-[#e7e5e4]">
                   <button
                     onClick={() => setMode('login')}
-                    className={`w-1/2 py-2 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      mode === 'login'
-                        ? 'bg-[#0c0a09] text-white shadow-xs'
-                        : 'text-[#78716c] hover:text-[#0c0a09]'
-                    }`}
+                    className={`w-1/2 py-2 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${mode === 'login'
+                      ? 'bg-[#0c0a09] text-white shadow-xs'
+                      : 'text-[#78716c] hover:text-[#0c0a09]'
+                      }`}
                   >
                     Sign In
                   </button>
                   <button
                     onClick={() => setMode('register')}
-                    className={`w-1/2 py-2 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      mode === 'register'
-                        ? 'bg-[#0c0a09] text-white shadow-xs'
-                        : 'text-[#78716c] hover:text-[#0c0a09]'
-                    }`}
+                    className={`w-1/2 py-2 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${mode === 'register'
+                      ? 'bg-[#0c0a09] text-white shadow-xs'
+                      : 'text-[#78716c] hover:text-[#0c0a09]'
+                      }`}
                   >
                     Create Account
                   </button>
@@ -270,19 +253,19 @@ export default function OnboardingPage() {
                   {mode === 'login'
                     ? 'Welcome back'
                     : mode === 'register' && registerStep === 'credentials'
-                    ? 'Create your account'
-                    : mode === 'register' && registerStep === 'optional_pan'
-                    ? 'Verify Government KYC'
-                    : 'Account Recovery'}
+                      ? 'Create your account'
+                      : mode === 'register' && registerStep === 'optional_pan'
+                        ? 'Verify Government KYC'
+                        : 'Account Recovery'}
                 </h2>
                 <p className="text-xs text-[#78716c] mt-1">
                   {mode === 'login'
                     ? 'Sign in to access your collaborative pool dashboard and milestone points.'
                     : mode === 'register' && registerStep === 'credentials'
-                    ? 'Start building wealth and unlocking group rewards together.'
-                    : mode === 'register' && registerStep === 'optional_pan'
-                    ? 'Link Aadhaar or PAN to verify your identity and boost group tier standings.'
-                    : 'Enter your registered email address to receive a secure recovery link.'}
+                      ? 'Start building wealth and unlocking group rewards together.'
+                      : mode === 'register' && registerStep === 'optional_pan'
+                        ? 'Link Aadhaar or PAN to verify your identity and boost group tier standings.'
+                        : 'Enter your registered email address to receive a secure recovery link.'}
                 </p>
               </div>
 
@@ -377,9 +360,9 @@ export default function OnboardingPage() {
       <footer className="bg-white border-t border-[#e7e5e4] w-full mt-auto">
         <div className="w-full px-4 sm:px-8 lg:px-12 py-6 flex flex-col md:flex-row items-center justify-between gap-4 mx-auto max-w-7xl">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-[#0c0a09] text-xs">TribeWealth</span>
+            <span className="font-extrabold text-[#0c0a09] text-xs">Collaborative Group Rewards</span>
             <span className="text-[#78716c] text-[11px]">
-              © 2026 TribeWealth Financial Technologies Pvt. Ltd. Bank-grade security with RBI & DigiLocker compliance.
+              © 2026 Collaborative Group Rewards Technologies Pvt. Ltd. Bank-grade security with RBI & DigiLocker compliance.
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs">

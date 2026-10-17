@@ -79,7 +79,7 @@ export default function KycCallbackPage() {
 
     try {
       const res = await kycApi.verifyAadhaar({ client_id: clientId });
-      if (res.data.success) {
+      if (res.data.success && res.data.status === 'verified') {
         setSuccess(true);
         const data = res.data.data;
         setVerifiedData({
@@ -145,7 +145,7 @@ export default function KycCallbackPage() {
                 <BadgePercent className="w-5 h-5 text-white" />
               </div>
               <span className="text-base font-bold text-[#0c0a09] tracking-tight">
-                TribeWealth
+                Collaborative Group Rewards
               </span>
             </Link>
 
@@ -452,7 +452,7 @@ export default function KycCallbackPage() {
       <footer className="bg-white border-t border-[#e7e5e4] mt-auto">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs text-[#78716c]">
           <div className="flex flex-col sm:flex-row items-center gap-2">
-            <span className="font-bold text-[#0c0a09]">TribeWealth</span>
+            <span className="font-bold text-[#0c0a09]">Collaborative Group Rewards</span>
             <span className="hidden sm:inline text-[#d0c4be]">|</span>
             <p className="max-w-xl text-[11px]">
               &copy; 2026 Collaborative Group Rewards Inc. Official DigiLocker UIDAI Gateway Partner. All regulatory checks adhere to RBI &amp; UIDAI compliance standards.

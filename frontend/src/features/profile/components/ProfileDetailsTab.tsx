@@ -3,15 +3,15 @@ import {
   User as UserIcon,
   Mail,
   Phone,
-  Lock,
   Sparkles,
   CheckCircle2,
+  Lock,
   ShieldCheck,
-  CreditCard,
 } from 'lucide-react';
 import type { User } from '../../../types';
-import VerificationBadge from '../../../components/VerificationBadge';
 import { Button, Input } from '../../../components/ui';
+import VerificationBadge from '../../../components/VerificationBadge';
+import { maskPan } from '../../../lib/masking';
 
 interface ProfileDetailsTabProps {
   user: User | null;
@@ -24,14 +24,13 @@ interface ProfileDetailsTabProps {
   successMsg?: string;
   handleSubmit: (e: React.FormEvent) => void;
   handleClose: () => void;
-  profilePanInput: string;
-  setProfilePanInput: (val: string) => void;
-  profilePanLoading: boolean;
+  profilePanInput?: string;
+  setProfilePanInput?: (val: string) => void;
+  profilePanLoading?: boolean;
   profilePanError?: string;
-  setProfilePanError: (val: string) => void;
+  setProfilePanError?: (val: string) => void;
   profilePanSuccess?: string;
-  handleVerifyProfilePan: (e: React.FormEvent) => void;
-  onOpenCreditModal?: () => void;
+  handleVerifyProfilePan?: (e: React.FormEvent) => void;
 }
 
 export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
@@ -45,14 +44,13 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
   successMsg,
   handleSubmit,
   handleClose,
-  profilePanInput,
+  profilePanInput = '',
   setProfilePanInput,
-  profilePanLoading,
+  profilePanLoading = false,
   profilePanError,
   setProfilePanError,
   profilePanSuccess,
   handleVerifyProfilePan,
-  onOpenCreditModal,
 }) => {
   const isPanVerified = Boolean(user?.pan_verified);
 
@@ -71,61 +69,49 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
       )}
 
       {/* PAN Verification Section */}
-      <div className="rounded-2xl p-4 border border-[#e7e5e4] bg-[#fafafa] shadow-2xs space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white border border-[#e7e5e4] flex items-center justify-center text-[#0c0a09] shadow-2xs">
-              <ShieldCheck className="w-4 h-4 text-[#b4552d]" />
+      <div className="p-4 rounded-2xl border transition-all bg-[#fafafa] border-[#e7e5e4]">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+              isPanVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-white text-[#0c0a09] border border-[#e7e5e4]'
+            }`}>
+              <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
-              <h5 className="font-bold text-xs text-[#0c0a09]">PAN Verification</h5>
+              <h4 className="font-bold text-xs text-[#0c0a09]">PAN Verification</h4>
               <p className="text-[11px] text-[#78716c]">
-                {isPanVerified ? 'Identity verified via official registry' : 'Your PAN is not verified.'}
+                {isPanVerified
+                  ? 'Identity verified with Income Tax Dept'
+                  : 'Your PAN is not verified.'}
               </p>
             </div>
           </div>
-          <VerificationBadge type="pan" status={isPanVerified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
+          <VerificationBadge
+            type="pan"
+            status={isPanVerified ? 'VERIFIED' : 'NOT_STARTED'}
+            size="sm"
+          />
         </div>
 
         {isPanVerified ? (
-          <div className="bg-white border border-[#e7e5e4] rounded-xl p-3.5 space-y-2 text-xs">
+          <div className="bg-white border border-[#e7e5e4] rounded-xl p-3 space-y-1.5 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[#78716c] text-[11px] font-medium">PAN Number:</span>
-              <span className="font-mono font-bold text-[#0c0a09] tracking-wider">{user?.pan_masked || 'Verified'}</span>
+              <span className="text-[#78716c] text-[11px]">PAN Number:</span>
+              <span className="font-mono font-bold text-[#0c0a09]">{maskPan(user?.pan_masked)}</span>
             </div>
             {user?.pan_registered_name && (
               <div className="flex items-center justify-between">
-                <span className="text-[#78716c] text-[11px] font-medium">Cardholder Name:</span>
+                <span className="text-[#78716c] text-[11px]">Registered Name:</span>
                 <span className="font-bold text-[#0c0a09]">{user.pan_registered_name}</span>
               </div>
             )}
-            {user?.pan_verified_at && (
-              <div className="flex items-center justify-between">
-                <span className="text-[#78716c] text-[11px] font-medium">Verified on:</span>
-                <span className="text-[#78716c] font-medium">
-                  {new Date(user.pan_verified_at).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}
-                </span>
-              </div>
-            )}
-            {onOpenCreditModal && (
-              <div className="pt-2 border-t border-[#e7e5e4] mt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={onOpenCreditModal}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#b4552d] hover:text-[#732600] hover:underline cursor-pointer"
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>View PAN Financial &amp; Credit Insights →</span>
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 text-emerald-800 text-[11px] font-semibold pt-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Identity verified via official registry</span>
+            </div>
           </div>
         ) : (
-          <div className="space-y-3 pt-1">
+          <div className="space-y-2">
             {profilePanError && (
               <p className="text-[#ba1a1a] text-xs bg-[#ffdad6]/40 border border-[#ffdad6] p-2.5 rounded-xl font-medium">
                 {profilePanError}
@@ -141,12 +127,12 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
                 type="text"
                 value={profilePanInput}
                 onChange={(e) => {
-                  setProfilePanInput(e.target.value.toUpperCase());
-                  if (profilePanError) setProfilePanError('');
+                  setProfilePanInput?.(e.target.value.toUpperCase());
+                  if (profilePanError) setProfilePanError?.('');
                 }}
                 placeholder="ABCDE1234A"
                 maxLength={10}
-                className="flex-1 bg-white border border-[#e7e5e4] focus:border-[#0c0a09] rounded-xl px-3.5 py-2.5 text-xs font-mono uppercase tracking-wider text-[#0c0a09] focus:outline-none focus:ring-2 focus:ring-[#0c0a09]"
+                className="flex-1 bg-white border border-[#e7e5e4] focus:border-[#0c0a09] rounded-xl px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-[#0c0a09] focus:outline-none focus:ring-1 focus:ring-[#0c0a09]"
               />
               <Button
                 type="button"
@@ -155,7 +141,7 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
                 loading={profilePanLoading}
                 disabled={profilePanLoading || !profilePanInput.trim()}
                 onClick={handleVerifyProfilePan}
-                className="bg-[#0c0a09] hover:bg-neutral-800 text-white font-bold text-xs"
+                className="bg-[#0c0a09] hover:bg-neutral-800 text-white text-xs font-bold"
               >
                 Verify PAN
               </Button>
@@ -164,18 +150,20 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
         )}
       </div>
 
-      {/* Reward Banner */}
-      <div className={`border rounded-2xl p-4 flex items-center justify-between transition-all ${
+      {/* Profile Completion Bonus Callout */}
+      <div className={`p-4 rounded-2xl border flex items-center justify-between ${
         isPanVerified
-          ? 'bg-[#ffdbce]/30 border-[#ffb599]'
+          ? 'bg-[#fafafa] border-[#e7e5e4]'
           : 'bg-[#fff7ed] border-[#fed7aa]'
       }`}>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-            isPanVerified ? 'bg-[#0c0a09] text-white' : 'bg-[#d97706] text-white shadow-2xs'
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+            isPanVerified
+              ? 'bg-white border-[#e7e5e4] text-[#b4552d]'
+              : 'bg-white border-[#fed7aa] text-[#b4552d]'
           }`}>
             {isPanVerified ? (
-              <Sparkles className="w-5 h-5 text-[#fd8d60]" />
+              <Sparkles className="w-5 h-5 text-[#b4552d]" />
             ) : (
               <Lock className="w-5 h-5" />
             )}
@@ -191,12 +179,12 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
             </h4>
             <p className="text-[11px] text-[#78716c]">
               {isPanVerified
-                ? 'Complete details to earn group points'
+                ? 'Complete your profile details to earn group points.'
                 : 'PAN verification required. Verify your PAN above to unlock this bonus.'}
             </p>
           </div>
         </div>
-        <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-2xs ${
+        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
           isPanVerified
             ? 'text-[#0c0a09] bg-white border border-[#e7e5e4]'
             : 'text-[#7c2d12] bg-[#ffedd5] border border-[#fed7aa]'
@@ -230,7 +218,7 @@ export const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          placeholder="+1 234 567 8900"
+          placeholder="+91 98765 43210"
           maxLength={32}
           icon={<Phone className="w-4 h-4 text-[#78716c]" />}
         />

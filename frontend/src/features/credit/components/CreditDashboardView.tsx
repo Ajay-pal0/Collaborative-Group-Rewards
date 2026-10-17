@@ -4,6 +4,7 @@ import { extractErrorMessage } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import type { CreditProfile, DetailedCreditReport } from '../../../types';
+import { maskPan } from '../../../lib/masking';
 import {
   CreditCard,
   ShieldCheck,
@@ -105,6 +106,15 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!showConsentModal) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [showConsentModal]);
+
   const handleInitiateScore = () => {
     setPendingAction('score');
     setShowConsentModal(true);
@@ -133,8 +143,22 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
         setDetailedReport(res.data);
         // Refresh profile
         await loadCreditProfile();
-        showToast('Comprehensive CIBIL report fetched successfully!', 'success');
-        setActiveTab('accounts');
+        if (res.data.status === 'COMPLETED') {
+          showToast('Comprehensive CIBIL report fetched successfully!', 'success');
+          setActiveTab('accounts');
+        } else if (res.data.status === 'PENDING_PROVIDER_ACCESS' || res.data.status === 'FAILED') {
+          const err =
+            res.data.error ||
+            res.data.status_message ||
+            res.data.message ||
+            'Credit bureau API access is currently pending provisioning on this account.';
+          showToast(err, 'error');
+        } else {
+          showToast(
+            res.data.status_message || res.data.message || 'Full credit report request registered.',
+            'info'
+          );
+        }
       } catch (err) {
         showToast(extractErrorMessage(err), 'error');
       } finally {
@@ -150,8 +174,15 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
         setProfile(res.data);
         if (res.data.status === 'COMPLETED') {
           showToast('CIBIL score retrieved successfully!', 'success');
+        } else if (res.data.status === 'PENDING_PROVIDER_ACCESS' || res.data.status === 'FAILED') {
+          const err =
+            res.data.error ||
+            res.data.status_message ||
+            res.data.message ||
+            'Credit bureau API access is currently pending provisioning on this account.';
+          showToast(err, 'error');
         } else {
-          showToast(res.data.status_message || 'Informed consent recorded!', 'info');
+          showToast(res.data.status_message || res.data.message || 'Informed consent recorded!', 'info');
         }
       } catch (err) {
         showToast(extractErrorMessage(err), 'error');
@@ -249,6 +280,26 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
         </div>
       </div>
 
+      {/* Provider Access / Error Notice */}
+      {(profile?.status === 'PENDING_PROVIDER_ACCESS' || profile?.status === 'FAILED' || profile?.error) && (
+        <div className="p-4 rounded-2xl bg-[#fff7ed] border border-[#ffedd5] flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-[#d97706] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold text-[#9a3412]">
+              {profile?.status === 'PENDING_PROVIDER_ACCESS'
+                ? 'Credit Bureau Access Notice'
+                : 'Credit Provider Notice'}
+            </h4>
+            <p className="text-xs text-[#78716c] leading-relaxed">
+              {profile?.error ||
+                profile?.status_message ||
+                profile?.message ||
+                'Credit bureau API access is currently pending provisioning on this account.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <Tabs
         tabs={tabsList}
@@ -266,11 +317,13 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
               fetchedAt={profile?.last_report_date}
               onFetchScore={handleInitiateScore}
               loading={fetchingScore}
+              status={profile?.status}
+              statusMessage={profile?.error || profile?.status_message || profile?.message}
             />
 
             <PanFinancialCard
               isPanVerified={Boolean(user?.pan_verified || profile?.pan_financial_info?.is_pan_verified)}
-              panMasked={user?.pan_masked || profile?.pan_financial_info?.pan_masked || 'ABCDE••••F'}
+              panMasked={maskPan(user?.pan_masked || profile?.pan_financial_info?.pan_masked)}
               registeredName={user?.pan_registered_name || profile?.pan_financial_info?.registered_name || user?.name || 'CARDHOLDER'}
               panCategory={profile?.pan_financial_info?.category || 'Individual'}
               panStatus={profile?.pan_financial_info?.pan_status || 'Active'}
@@ -448,9 +501,12 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
 
       {/* Informed Consent Modal */}
       {showConsentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#e7e5e4] space-y-4">
-            <div className="flex items-center gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overflow-hidden animate-fade-in" onClick={() => setShowConsentModal(false)}>
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[88vh] flex flex-col shadow-xl border border-[#e7e5e4] overflow-hidden my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 p-6 pb-4 border-b border-[#e7e5e4] shrink-0">
               <div className="w-10 h-10 rounded-xl bg-[#fff7ed] border border-[#ffedd5] flex items-center justify-center text-[#9a3412]">
                 <ShieldCheck className="w-5 h-5" />
               </div>
@@ -464,39 +520,41 @@ export const CreditDashboardView: React.FC<CreditDashboardViewProps> = ({
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#fafafa] border border-[#e7e5e4] text-xs text-[#57534e] space-y-2">
-              <p>
-                By proceeding, you grant explicit authorization to Collaborative Group Rewards and Surepass Technologies to query your credit records from TransUnion CIBIL.
-              </p>
-              <ul className="list-disc pl-4 space-y-1 text-[#78716c]">
-                <li>This inquiry will be used solely for financial eligibility and tier benefits.</li>
-                <li>Your PAN and registered mobile number will be securely verified.</li>
-                <li>All inquiries are recorded in compliance with Reserve Bank of India (RBI) guidelines.</li>
-              </ul>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 custom-scrollbar">
+              <div className="p-4 rounded-xl bg-[#fafafa] border border-[#e7e5e4] text-xs text-[#57534e] space-y-2">
+                <p>
+                  By proceeding, you grant explicit authorization to Collaborative Group Rewards and Surepass Technologies to query your credit records from TransUnion CIBIL.
+                </p>
+                <ul className="list-disc pl-4 space-y-1 text-[#78716c]">
+                  <li>This inquiry will be used solely for financial eligibility and tier benefits.</li>
+                  <li>Your PAN and registered mobile number will be securely verified.</li>
+                  <li>All inquiries are recorded in compliance with Reserve Bank of India (RBI) guidelines.</li>
+                </ul>
+              </div>
+
+              {!isPanVerified && (
+                <div className="p-3 rounded-xl bg-[#fffbeb] border border-[#fde68a] text-xs text-[#92400e] flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>
+                    Tip: Verifying your PAN beforehand ensures immediate matching with official government credit registry records.
+                  </p>
+                </div>
+              )}
+
+              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-[#e7e5e4] hover:bg-[#fafafa] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentGiven}
+                  onChange={(e) => setConsentGiven(e.target.checked)}
+                  className="mt-0.5 rounded border-[#d6d3d1] text-[#0c0a09] focus:ring-[#0c0a09]"
+                />
+                <span className="text-xs text-[#0c0a09] font-medium leading-relaxed">
+                  I hereby grant affirmative consent to retrieve my CIBIL credit score and bureau details.
+                </span>
+              </label>
             </div>
 
-            {!isPanVerified && (
-              <div className="p-3 rounded-xl bg-[#fffbeb] border border-[#fde68a] text-xs text-[#92400e] flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p>
-                  Tip: Verifying your PAN beforehand ensures immediate matching with official government credit registry records.
-                </p>
-              </div>
-            )}
-
-            <label className="flex items-start gap-2.5 p-3 rounded-xl border border-[#e7e5e4] hover:bg-[#fafafa] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={consentGiven}
-                onChange={(e) => setConsentGiven(e.target.checked)}
-                className="mt-0.5 rounded border-[#d6d3d1] text-[#0c0a09] focus:ring-[#0c0a09]"
-              />
-              <span className="text-xs text-[#0c0a09] font-medium leading-relaxed">
-                I hereby grant affirmative consent to retrieve my CIBIL credit score and bureau details.
-              </span>
-            </label>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            <div className="flex items-center justify-end gap-2.5 p-4 border-t border-[#e7e5e4] shrink-0 bg-[#fafafa]">
               <Button
                 variant="secondary"
                 size="sm"

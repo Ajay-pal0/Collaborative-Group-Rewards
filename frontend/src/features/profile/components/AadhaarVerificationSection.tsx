@@ -63,7 +63,7 @@ export const AadhaarVerificationSection: React.FC<AadhaarVerificationSectionProp
     async (clientId: string): Promise<boolean> => {
       try {
         const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
-        if (verifyRes.data.success) {
+        if (verifyRes.data.success && verifyRes.data.status === 'verified') {
           if (user) {
             updateUser({
               ...user,

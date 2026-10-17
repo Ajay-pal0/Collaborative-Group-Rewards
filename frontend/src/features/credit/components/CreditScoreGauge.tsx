@@ -8,6 +8,8 @@ interface CreditScoreGaugeProps {
   fetchedAt?: string | null;
   onFetchScore?: () => void;
   loading?: boolean;
+  status?: string | null;
+  statusMessage?: string | null;
 }
 
 export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
@@ -16,17 +18,23 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
   fetchedAt,
   onFetchScore,
   loading = false,
+  status,
+  statusMessage,
 }) => {
   if (!score) {
+    const isUnprovisioned = status === 'PENDING_PROVIDER_ACCESS';
     return (
       <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-6 text-center space-y-3">
         <div className="w-12 h-12 rounded-full bg-white border border-[#e7e5e4] shadow-xs flex items-center justify-center mx-auto text-[#78716c]">
           <TrendingUp className="w-6 h-6" />
         </div>
         <div>
-          <h4 className="font-semibold text-sm text-[#0c0a09]">No CIBIL Score Fetched</h4>
+          <h4 className="font-semibold text-sm text-[#0c0a09]">
+            {isUnprovisioned ? 'Bureau Access Notice' : 'No CIBIL Score Fetched'}
+          </h4>
           <p className="text-xs text-[#78716c] max-w-xs mx-auto mt-1">
-            Provide affirmative consent to securely query your official bureau credit score.
+            {statusMessage ||
+              'Provide affirmative consent to securely query your official bureau credit score.'}
           </p>
         </div>
         {onFetchScore && (
@@ -35,7 +43,7 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
             disabled={loading}
             className="btn-primary text-xs px-4 py-2"
           >
-            {loading ? 'Fetching...' : 'Query CIBIL Score'}
+            {loading ? 'Fetching...' : isUnprovisioned ? 'Retry CIBIL Score' : 'Query CIBIL Score'}
           </button>
         )}
       </div>

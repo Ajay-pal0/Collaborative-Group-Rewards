@@ -62,7 +62,7 @@ export function useAadhaarVerification() {
     ): Promise<boolean> => {
       try {
         const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
-        if (verifyRes.data.success) {
+        if (verifyRes.data.success && verifyRes.data.status === 'verified') {
           const confirmedPayload: AadhaarVerifiedPayload = {
             masked_id: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
             name: verifyRes.data.data?.registered_name || user?.name || 'Verified Citizen',
@@ -114,7 +114,7 @@ export function useAadhaarVerification() {
       setError('');
       try {
         const verifyRes = await kycApi.verifyAadhaar({ client_id: cId });
-        if (verifyRes.data.success) {
+        if (verifyRes.data.success && verifyRes.data.status === 'verified') {
           const confirmedPayload: AadhaarVerifiedPayload = {
             masked_id: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
             name: verifyRes.data.data?.registered_name || user?.name || 'Verified Citizen',
@@ -137,7 +137,7 @@ export function useAadhaarVerification() {
 
           showToast('Aadhaar verification confirmed! 🛡️', 'success');
         } else {
-          setError(verifyRes.data.error || 'Verification is still pending. Please complete DigiLocker authorization.');
+          setError(verifyRes.data.message || verifyRes.data.error || 'Verification is still pending. Please complete DigiLocker authorization.');
         }
       } catch (err) {
         setError(extractErrorMessage(err));

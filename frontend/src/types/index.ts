@@ -69,7 +69,9 @@ export interface PanVerifyResponse {
   badge: BadgeInfo;
   data?: {
     masked_id: string;
+    pan_masked?: string;
     registered_name: string;
+    name?: string;
     verified_at: string;
   };
   already_verified?: boolean;
@@ -161,6 +163,8 @@ export interface CreditEnquiryItem {
 
 export interface DetailedCreditReport {
   success: boolean;
+  status?: string;
+  status_message?: string;
   credit_score: number | null;
   score_band: string | null;
   account_summary: AccountSummaryData;
@@ -196,6 +200,7 @@ export interface CreditProfile {
   status_message: string;
   can_retry: boolean;
   message?: string;
+  error?: string;
   pan_financial_info?: PanFinancialProfile;
 }
 
@@ -324,6 +329,9 @@ export interface UserPointsData {
   group_id: string;
   group_total_points: number;
   user_points: number;
+  user_total_points?: number;
+  benefit_points?: number;
+  task_points?: number;
   user_contribution_pct: number;
   user_tasks_completed: number;
   member_points: MemberPoints[];

@@ -105,7 +105,7 @@ export default function ResetPasswordPage() {
                 <Shield className="w-5 h-5 text-[#fd8d60]" />
               </div>
               <span className="text-base font-bold tracking-tight text-[#0c0a09]">
-                TribeWealth
+                Collaborative Group Rewards
               </span>
             </Link>
 

@@ -41,7 +41,7 @@ export default function ProfilePage() {
               <span>Credit Dashboard</span>
             </Link>
             <span className="text-base font-bold text-[#0c0a09] tracking-tight ml-1 hidden sm:inline">
-              TribeWealth
+              Collaborative Group Rewards
             </span>
           </div>
 
@@ -49,9 +49,6 @@ export default function ProfilePage() {
           <nav className="hidden md:flex items-center space-x-6 text-xs font-semibold">
             <Link to="/groups" className="text-[#78716c] hover:text-[#0c0a09] transition-colors">
               Dashboard
-            </Link>
-            <Link to="/groups" className="text-[#78716c] hover:text-[#0c0a09] transition-colors">
-              Group Pots
             </Link>
             <Link to="/credit" className="text-[#78716c] hover:text-[#0c0a09] transition-colors">
               Credit Hub
@@ -86,16 +83,16 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2.5 pl-1">
               <div className="relative">
                 <div className="w-8 h-8 rounded-full bg-[#0c0a09] text-white flex items-center justify-center text-xs font-bold ring-2 ring-[#e7e5e4]">
-                  {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AP'}
+                  {(user?.name || user?.pan_registered_name || user?.email || 'U').trim().slice(0, 2).toUpperCase()}
                 </div>
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] rounded-full ring-2 ring-white"></span>
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-bold text-[#0c0a09] leading-tight">
-                  {user?.name || 'Ajay Pal'}
+                  {user?.name || user?.pan_registered_name || user?.email?.split('@')[0] || 'User'}
                 </span>
                 <span className="text-[10px] text-[#78716c] font-medium leading-tight">
-                  Tier-1 Member / Owner
+                  Tier-1 Member
                 </span>
               </div>
             </div>
@@ -148,7 +145,7 @@ export default function ProfilePage() {
       <footer className="bg-white border-t border-[#e7e5e4] py-6 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#78716c]">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#0c0a09]">TribeWealth Rewards</span>
+            <span className="font-bold text-[#0c0a09]">Collaborative Group Rewards</span>
             <span>•</span>
             <span>Fintech Collaborative Rewards &copy; 2026. All rights reserved.</span>
           </div>

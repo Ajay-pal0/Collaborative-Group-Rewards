@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, Input, Button, Badge } from '
 import { CreditCard, CheckCircle2, AlertCircle } from 'lucide-react';
 
 import { extractErrorMessage } from '../../../lib/api';
+import { maskPan } from '../../../lib/masking';
 
 interface PanVerificationSectionProps {
   user: User | null;
@@ -74,7 +75,7 @@ export const PanVerificationSection: React.FC<PanVerificationSectionProps> = ({
               <div>
                 <span className="text-[11px] text-[#065f46] font-medium block">Masked PAN</span>
                 <span className="font-mono font-bold text-sm text-[#0c0a09] mt-0.5 block">
-                  {user?.pan_masked || 'ABCDE••••F'}
+                  {maskPan(user?.pan_masked)}
                 </span>
               </div>
               <div>

@@ -18,11 +18,18 @@ export const PersonalProfileSection: React.FC<PersonalProfileSectionProps> = ({
 }) => {
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  const [prevUser, setPrevUser] = useState(user);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [creditAlerts, setCreditAlerts] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  if (user !== prevUser) {
+    setPrevUser(user);
+    setName(user?.name || '');
+    setPhone(user?.phone || '');
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

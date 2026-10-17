@@ -35,6 +35,10 @@ export const authApi = {
     api.post<{ message: string; success?: boolean }>('/auth/reset-password/', data),
   checkEmailExists: (data: { email: string }) =>
     api.post<{ detail: string; exists: boolean; email: string }>('/auth/password-reset/check-email/', data),
+  updateProfile: (data: { name?: string; phone?: string }) =>
+    api.patch<User>('/auth/me/', data),
+  updatePassword: (data: { current_password: string; new_password: string; confirm_password: string }) =>
+    api.post<{ success: boolean; data?: { message: string }; message?: string }>('/auth/update-password/', data),
 };
 
 // Centralized Groups API Service

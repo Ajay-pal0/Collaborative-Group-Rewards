@@ -6,6 +6,7 @@ import { extractErrorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { AuthResponse } from '../types';
 import { preOpenAuthWindow, openDigilockerInNewTab } from '../features/kyc/digiboostSdk';
+import { maskPan } from '../lib/masking';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -131,17 +132,28 @@ export function useAuthForm() {
       const res = await panApi.verifyPan({ pan: cleanPan });
       if (res.data.success) {
         setPanSuccess(true);
+        const rawMasked =
+          res.data.data?.masked_id ||
+          res.data.data?.pan_masked;
+        const masked = maskPan(rawMasked || cleanPan);
+        const regName =
+          res.data.data?.registered_name ||
+          res.data.data?.name ||
+          user?.name ||
+          'Verified Citizen';
+        const verifiedAt = res.data.data?.verified_at;
+
         setPanVerifiedData({
-          pan_masked: res.data.data.pan_masked,
-          name: res.data.data.name,
+          pan_masked: masked,
+          name: regName,
         });
         if (user) {
           updateUser({
             ...user,
             pan_verified: true,
-            pan_masked: res.data.data.pan_masked,
-            pan_registered_name: res.data.data.name,
-            pan_verified_at: res.data.data.verified_at || undefined,
+            pan_masked: masked,
+            pan_registered_name: regName,
+            pan_verified_at: verifiedAt || undefined,
           });
         }
       } else {
@@ -185,7 +197,7 @@ export function useAuthForm() {
       const confirmVerification = async (): Promise<boolean> => {
         try {
           const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
-          if (verifyRes.data.success) {
+          if (verifyRes.data.success && verifyRes.data.status === 'verified') {
             setAadhaarSuccess(true);
             setAadhaarVerifiedData({
               aadhaar_masked: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
@@ -204,8 +216,7 @@ export function useAuthForm() {
             return true;
           }
           return false;
-        } catch (confirmErr) {
-          setAadhaarError(extractErrorMessage(confirmErr));
+        } catch {
           return false;
         }
       };
@@ -246,7 +257,7 @@ export function useAuthForm() {
           },
         });
 
-        // Background auto-polling
+        // Background auto-polling (only succeeds when status === 'verified')
         let polls = 0;
         pollTimer = setInterval(async () => {
           polls++;
@@ -268,7 +279,7 @@ export function useAuthForm() {
               }
             }
           }
-        }, 3000);
+        }, 4000);
       } else {
         if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
         await confirmVerification();

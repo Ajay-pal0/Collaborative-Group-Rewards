@@ -9,6 +9,7 @@ import {
 import type { User } from '../../../types';
 import VerificationBadge from '../../../components/VerificationBadge';
 import { Button } from '../../../components/ui';
+import { maskPan } from '../../../lib/masking';
 
 interface ProfileIdentityTabProps {
   user: User | null;
@@ -171,7 +172,7 @@ export const ProfileIdentityTab: React.FC<ProfileIdentityTabProps> = ({
           <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-xl p-3.5 space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-[#78716c] text-[11px] font-medium">PAN Number:</span>
-              <span className="font-mono font-bold text-[#0c0a09] tracking-wider">{user.pan_masked || 'EMTPP••••H'}</span>
+              <span className="font-mono font-bold text-[#0c0a09] tracking-wider">{maskPan(user.pan_masked)}</span>
             </div>
             {user.pan_registered_name && (
               <div className="flex items-center justify-between">
