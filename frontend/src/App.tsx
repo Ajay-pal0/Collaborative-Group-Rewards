@@ -7,13 +7,16 @@ import OnboardingPage from './pages/OnboardingPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import GroupsDashboardPage from './pages/GroupsDashboardPage';
 import JoinGroupPage from './pages/JoinGroupPage';
+import KycCallbackPage from './pages/KycCallbackPage';
+import ProfilePage from './pages/ProfilePage';
+import CreditDashboardPage from './pages/CreditDashboardPage';
 
 export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
-          <div className="min-h-screen bg-[#F8F9FC] text-[#171923] selection:bg-[#635BFF] selection:text-white">
+          <div className="min-h-screen bg-[#f8fafc] text-[#0c0a09] selection:bg-[#0c0a09] selection:text-white antialiased font-sans">
             <Routes>
               {/* Auth Routes */}
               <Route path="/login" element={<OnboardingPage />} />
@@ -21,6 +24,25 @@ export default function App() {
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+              <Route path="/kyc/callback" element={<KycCallbackPage />} />
+
+              {/* Profile and Credit Dashboard Routes */}
+              <Route
+                path="/profile"
+                element={
+                  <AuthGuard>
+                    <ProfilePage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/credit"
+                element={
+                  <AuthGuard>
+                    <CreditDashboardPage />
+                  </AuthGuard>
+                }
+              />
 
               {/* Group Dashboard Routes */}
               <Route

@@ -3,10 +3,8 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import User
-
-logger = logging.getLogger(__name__)
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
@@ -14,6 +12,7 @@ from .serializers import (
     CheckEmailSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
+    UpdatePasswordSerializer,
     get_tokens_for_user,
 )
 from .services.password_reset_service import (
@@ -21,6 +20,9 @@ from .services.password_reset_service import (
     send_password_reset_email,
     verify_and_reset_password,
 )
+from .services.update_password_service import update_user_password
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
@@ -57,12 +59,20 @@ class MeView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(UserSerializer(user).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class PanVerifyView(APIView):
     """
     POST /api/auth/pan/verify/
-    Verifies user's PAN via the centralized Setu integration layer.
+    Verifies user's PAN via the centralized Surepass integration layer.
     """
+
     def post(self, request):
         from .serializers import PanVerifySerializer
         from .services.pan_service import verify_user_pan
@@ -265,3 +275,58 @@ class CheckEmailView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+class UpdatePasswordView(APIView):
+    """
+    POST /api/auth/update-password/
+    Updates password for currently authenticated user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = UpdatePasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            err_msg = 'Unable to update password.'
+            if 'current_password' in serializer.errors:
+                err_msg = serializer.errors['current_password'][0]
+            elif 'confirm_password' in serializer.errors:
+                err_msg = serializer.errors['confirm_password'][0]
+            elif 'new_password' in serializer.errors:
+                err_msg = serializer.errors['new_password'][0]
+            return Response(
+                {
+                    'success': False,
+                    'data': None,
+                    'error': err_msg,
+                    'message': err_msg,
+                    'errors': serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        current_password = serializer.validated_data['current_password']
+        new_password = serializer.validated_data['new_password']
+
+        success, msg = update_user_password(
+            request.user, current_password, new_password
+        )
+        if not success:
+            return Response(
+                {
+                    'success': False,
+                    'data': None,
+                    'error': msg,
+                    'message': msg,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                'success': True,
+                'data': {'message': msg},
+                'error': None,
+                'message': msg,
+            },
+            status=status.HTTP_200_OK,
+        )

@@ -68,28 +68,63 @@ Benefit Unlock & Activity Feed Phase
 
 ---
 
-## Architecture
+## Architecture & Design System
+
+### Visual & Design System (Samaro.ai-Inspired)
+
+The platform features a clean, high-contrast fintech aesthetic inspired by Samaro.ai:
+
+- **Design Tokens**: Standardized CSS variables defined in [tokens.css](frontend/src/styles/tokens.css):
+  - Primary Brand & Action: Deep obsidian (`#0c0a09` / `#292524`)
+  - Page & Card Surfaces: Clean warm stone background (`#f5f5f5`), crisp card surfaces (`#ffffff`), subtle borders (`#e7e5e4`)
+  - Brand Accents: Restrained warm terracotta / bronze (`#b4552d` / `#d98a5a`), warm milestone gold (`#d97706`)
+  - Semantic Status: Emerald verified (`#059669` / `#ecfdf5`), Amber pending (`#d97706`), Red alert (`#dc2626` / `#fef2f2`)
+- **Pill Primitives & Typography**: High-contrast Inter typography, accessible focus rings, pill-shaped primary actions, and non-color accessible status indicators.
+- **Reusable Primitives**: Modular UI components in `frontend/src/components/ui/` (`Button`, `Badge`, `StatusBadge`, `Card`, `Input`, `ProgressBar`, `Tabs`, `PageHeader`, `LoadingState`, `EmptyState`, `ErrorState`).
+- **Feature Modularization**: Decomposed views into feature-driven modules under `frontend/src/features/` (`auth`, `dashboard`, `profile`, `credit`, `groups`, `rewards`).
+
+### CIBIL Credit Intelligence & Identity Verification Architecture
+
+- **Surepass CIBIL Integration**:
+  - **Endpoint A (CIBIL Score)**: `POST /api/v1/credit-report-cibil/score` via backend `POST /api/v1/credit/score/`
+  - **Endpoint B (Detailed CIBIL Report)**: `POST /api/v1/credit-report-cibil/fetch-report` via backend `POST /api/v1/credit/full-report/`
+  - Bureau base URL configured via `SUREPASS_BASE_URL` (`https://sandbox.surepass.app`).
+  - Defensive response parsing supporting nested `consumerSummaryresp.accountSummary` and top-level fields.
+  - Approved qualitative CIBIL bands: Poor (300-549), Fair (550-649), Good (650-749), Very Good (750-799), Excellent (800-900).
+- **Authoritative Identity Verification**:
+  - Independent PAN and DigiLocker (Aadhaar) verification workflows.
+  - Verification attempt history logged via `VerificationAttempt` model without leaking sensitive credentials.
+  - PII masking: Full account numbers (`XXXXXXXX1234`), phone numbers, and identity identifiers masked before presentation.
+- **Dedicated Application Routes**:
+  - `/groups` & `/groups/:groupId` — Collaborative group rewards dashboard.
+  - `/credit` — TransUnion CIBIL Credit Dashboard (score gauge, loan accounts, payment history timeline, bureau inquiries).
+  - `/profile` — Dedicated Account Profile & Government KYC Verification page.
+
+### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     React 19 Frontend                   │
-│   (Vite + TypeScript + Tailwind CSS v4 + Axios + Lucide)│
-└────────────────────────────┬────────────────────────────┘
-                             │ REST API / JWT
-┌────────────────────────────▼────────────────────────────┐
-│                    Django 6.1 Backend                   │
-│   ┌─────────────────────────────────────────────────┐   │
-│   │ Apps: Users | Groups | Rewards | Activities     │   │
-│   ├─────────────────────────────────────────────────┤   │
-│   │ Service Layer: create_group, award_points,      │   │
-│   │ complete_task, claim_benefit, join_group        │   │
-│   └─────────────────────────────────────────────────┘   │
-└────────────────────────────┬────────────────────────────┘
-                             │ ORM / SQL Transactions
-┌────────────────────────────▼────────────────────────────┐
-│                  PostgreSQL 15 Database                 │
-│   (Unique Constraints, Foreign Keys, select_for_update) │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        React 19 + TypeScript Frontend                  │
+│   ├── features/ (auth, dashboard, profile, credit)                     │
+│   ├── components/ui/ (Button, Badge, Card, Input, ProgressBar, Tabs)   │
+│   ├── services/ (apiServices, auth, kyc, credit)                       │
+│   └── styles/ (tokens.css, index.css)                                  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ REST API / JWT
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         Django 6.1 REST Backend                        │
+│   ├── Apps: users | groups | rewards | kyc | credit | activities       │
+│   ├── Selectors Layer: apps/rewards/selectors.py,                      │
+│   │                    apps/groups/selectors.py                        │
+│   ├── Service Layer: create_group, award_points, complete_task,        │
+│   │                  claim_benefit, join_group, complete_profile       │
+│   └── Integrations: Surepass KYC, DigiLocker Aadhaar, Experian Credit  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ ORM / SQL Transactions
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         PostgreSQL 15 Database                         │
+│   (Unique Constraints, Foreign Keys, select_for_update, Idempotency)   │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -99,6 +134,7 @@ Benefit Unlock & Activity Feed Phase
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS v4, Axios, Lucide React, Vitest.
 - **Backend**: Django 6.1, Django REST Framework 3.18, djangorestframework-simplejwt, Pytest / Django Test Runner.
 - **Database**: PostgreSQL 15 (Docker containerized) with atomic transaction blocks and row locking.
+- **Identity & Credit Integrations**: Surepass DigiLocker Aadhaar KYC, PAN Comprehensive registry check, and Experian Credit profile aggregation.
 - **DevOps / Orchestration**: Docker Compose multi-container setup.
 
 ---
@@ -113,9 +149,9 @@ Benefit Unlock & Activity Feed Phase
  │ email (UQ)    │          │ group_id (FK) │          │ name          │
  │ name          │          │ user_id (FK)  │          │ group_type    │
  │ phone         │          │ role          │          │ created_by(FK)│
- └───────────────┘          │ status        │          │ cached_points │
-                            └───────┬───────┘          └───────┬───────┘
-                                    │ 1                        │ 1
+ │ pan_verified  │          │ status        │          │ cached_points │
+ │ aadhaar_verif │          └───────┬───────┘          └───────┬───────┘
+ └───────────────┘                  │ 1                        │ 1
                                     │                          │
                                     │ *                        │ *
                             ┌───────▼───────────────┐          │
@@ -261,24 +297,36 @@ Every key event in a group records an auditable `Activity` log entry:
 
 ### Running Tests
 
-**Backend Test Suite**:
+**Backend Test Suite (Pytest / Docker)**:
 
 ```bash
+# Via Docker Compose container
+docker exec together_backend pytest
+
+# Or directly in virtual environment
 cd backend
 source venv/bin/activate
-python manage.py test backend/tests --noinput
+pytest
 ```
 
-*Executes 28 automated tests covering group creation, invitation lifecycle, collaborative reward logic, task idempotency, multi-threaded race conditions, profile completion, and IDOR authorization boundaries.*
+*Executes 71 automated tests across `test_groups.py`, `test_pan_verification.py`, `test_password_reset.py`, and `test_surepass_kyc_and_credit.py`, verifying atomic points calculation, selectors, services, KYC callbacks, and IDOR protection.*
 
-**Frontend Test Suite**:
+**Frontend Test Suite (Vitest)**:
 
 ```bash
 cd frontend
 npm test
 ```
 
-*Executes Vitest component and hook unit tests.*
+*Executes 17 automated tests covering PAN verification, Surepass KYC & Experian credit modals, profile workflows, password resets, and custom hooks.*
+
+**Frontend Lint & Build Checks**:
+
+```bash
+cd frontend
+npm run lint   # ESLint 0 errors, 0 warnings
+npm run build  # Vite production bundle build
+```
 
 ---
 
@@ -335,6 +383,12 @@ DB_PASSWORD=postgres
 DB_HOST=localhost
 DB_PORT=5432
 FRONTEND_URL=http://localhost:5173
+
+# Surepass KYC & CIBIL Bureau Configuration
+SUREPASS_BASE_URL=https://sandbox.surepass.app
+SUREPASS_BEARER_TOKEN=your-surepass-bearer-token
+SUREPASS_TIMEOUT=15
+SUREPASS_DIGILOCKER_CALLBACK_URL=http://localhost:5173/kyc/callback
 ```
 
 ### Frontend (`frontend/.env`)

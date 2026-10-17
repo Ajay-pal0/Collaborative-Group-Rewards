@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { authApi, panApi } from '../services/apiServices';
+import { authApi, panApi, kycApi } from '../services/apiServices';
 import { extractErrorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { AuthResponse } from '../types';
+import { preOpenAuthWindow, openDigilockerInNewTab } from '../features/kyc/digiboostSdk';
+import { maskPan } from '../lib/masking';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,6 +18,7 @@ export function useAuthForm() {
 
   // Register state
   const [registerStep, setRegisterStep] = useState<'credentials' | 'optional_pan'>('credentials');
+  const [signupVerificationTab, setSignupVerificationTab] = useState<'pan' | 'aadhaar'>('pan');
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -30,6 +33,16 @@ export function useAuthForm() {
   const [panSuccess, setPanSuccess] = useState(false);
   const [panVerifiedData, setPanVerifiedData] = useState<{
     pan_masked: string;
+    name: string;
+  } | null>(null);
+
+  // Aadhaar verification during signup state
+  const [aadhaarLoading, setAadhaarLoading] = useState(false);
+  const [aadhaarError, setAadhaarError] = useState('');
+  const [aadhaarConsent, setAadhaarConsent] = useState(false);
+  const [aadhaarSuccess, setAadhaarSuccess] = useState(false);
+  const [aadhaarVerifiedData, setAadhaarVerifiedData] = useState<{
+    aadhaar_masked: string;
     name: string;
   } | null>(null);
 
@@ -119,17 +132,28 @@ export function useAuthForm() {
       const res = await panApi.verifyPan({ pan: cleanPan });
       if (res.data.success) {
         setPanSuccess(true);
+        const rawMasked =
+          res.data.data?.masked_id ||
+          res.data.data?.pan_masked;
+        const masked = maskPan(rawMasked || cleanPan);
+        const regName =
+          res.data.data?.registered_name ||
+          res.data.data?.name ||
+          user?.name ||
+          'Verified Citizen';
+        const verifiedAt = res.data.data?.verified_at;
+
         setPanVerifiedData({
-          pan_masked: res.data.data.pan_masked,
-          name: res.data.data.name,
+          pan_masked: masked,
+          name: regName,
         });
         if (user) {
           updateUser({
             ...user,
             pan_verified: true,
-            pan_masked: res.data.data.pan_masked,
-            pan_registered_name: res.data.data.name,
-            pan_verified_at: res.data.data.verified_at || undefined,
+            pan_masked: masked,
+            pan_registered_name: regName,
+            pan_verified_at: verifiedAt || undefined,
           });
         }
       } else {
@@ -139,6 +163,131 @@ export function useAuthForm() {
       setPanError(extractErrorMessage(err));
     } finally {
       setPanLoading(false);
+    }
+  }
+
+  async function handleVerifySignupAadhaar() {
+    setAadhaarError('');
+    if (!aadhaarConsent) {
+      setAadhaarError('Please provide consent to proceed with Aadhaar verification.');
+      return;
+    }
+
+    const preOpenedTab = preOpenAuthWindow();
+    setAadhaarLoading(true);
+
+    try {
+      const callbackUrl = window.location.origin + '/kyc/callback';
+      const res = await kycApi.initiateAadhaar({
+        consent: true,
+        redirect_url: callbackUrl,
+      });
+
+      if (!res.data.success) {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+        setAadhaarError(res.data.error || 'Failed to initiate DigiLocker verification.');
+        setAadhaarLoading(false);
+        return;
+      }
+
+      const clientId = res.data.client_id;
+      const sdkToken = res.data.token;
+      const authUrl = res.data.authorization_url;
+
+      const confirmVerification = async (): Promise<boolean> => {
+        try {
+          const verifyRes = await kycApi.verifyAadhaar({ client_id: clientId });
+          if (verifyRes.data.success && verifyRes.data.status === 'verified') {
+            setAadhaarSuccess(true);
+            setAadhaarVerifiedData({
+              aadhaar_masked: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
+              name: verifyRes.data.data?.registered_name || user?.name || 'Verified Citizen',
+            });
+            if (user) {
+              updateUser({
+                ...user,
+                aadhaar_verified: true,
+                aadhaar_masked: verifyRes.data.data?.masked_id || 'XXXXXXXX1234',
+                aadhaar_registered_name: verifyRes.data.data?.registered_name || user.name,
+                aadhaar_verified_at: new Date().toISOString(),
+              });
+            }
+            setAadhaarLoading(false);
+            return true;
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      };
+
+      if (sdkToken && !sdkToken.startsWith('mock_')) {
+        let isDone = false;
+        let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+        const stopPolling = () => {
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        };
+
+        const { authWindow, cleanup } = openDigilockerInNewTab({
+          authorizationUrl: authUrl,
+          token: sdkToken,
+          gateway: 'sandbox',
+          windowRef: preOpenedTab,
+          onSuccess: async () => {
+            if (isDone) return;
+            isDone = true;
+            stopPolling();
+            cleanup();
+            await confirmVerification();
+          },
+          onFailure: async (failReason) => {
+            if (isDone) return;
+            const ok = await confirmVerification();
+            if (!ok) {
+              isDone = true;
+              stopPolling();
+              cleanup();
+              setAadhaarError(typeof failReason === 'string' ? failReason : 'DigiLocker verification was cancelled or closed.');
+              setAadhaarLoading(false);
+            }
+          },
+        });
+
+        // Background auto-polling (only succeeds when status === 'verified')
+        let polls = 0;
+        pollTimer = setInterval(async () => {
+          polls++;
+          if (polls > 100 || isDone) {
+            stopPolling();
+            if (!isDone) setAadhaarLoading(false);
+            return;
+          }
+          const ok = await confirmVerification();
+          if (ok) {
+            isDone = true;
+            stopPolling();
+            cleanup();
+            if (authWindow && !authWindow.closed) {
+              try {
+                authWindow.close();
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }, 4000);
+      } else {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+        await confirmVerification();
+      }
+    } catch (err: unknown) {
+      if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+      setAadhaarError(extractErrorMessage(err));
+      setAadhaarLoading(false);
     }
   }
 
@@ -240,6 +389,16 @@ export function useAuthForm() {
     handleVerifySignupPan,
     handleSkipSignupPan,
     handleCompleteSignup,
+    signupVerificationTab,
+    setSignupVerificationTab,
+    aadhaarLoading,
+    aadhaarError,
+    setAadhaarError,
+    aadhaarConsent,
+    setAadhaarConsent,
+    aadhaarSuccess,
+    aadhaarVerifiedData,
+    handleVerifySignupAadhaar,
     loginEmail,
     setLoginEmail,
     loginPassword,

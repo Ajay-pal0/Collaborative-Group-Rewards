@@ -25,7 +25,7 @@ describe('PAN Verification Frontend Flow', () => {
   });
 
   it('renders unverified PAN section in ProfileModal and triggers verification', async () => {
-    (api.get as any).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: {
         id: 'user-1',
         email: 'unverified@example.com',
@@ -35,7 +35,7 @@ describe('PAN Verification Frontend Flow', () => {
       },
     });
 
-    (api.post as any).mockResolvedValue({
+    vi.mocked(api.post).mockResolvedValue({
       data: {
         success: true,
         message: 'PAN verified successfully.',
@@ -117,7 +117,7 @@ describe('PAN Verification Frontend Flow', () => {
   });
 
   it('renders OnboardingPage and allows skipping PAN verification', async () => {
-    (api.post as any).mockResolvedValue({
+    vi.mocked(api.post).mockResolvedValue({
       data: {
         user: { id: 'u1', email: 'signup@example.com', name: 'New User' },
         tokens: { access: 'acc-token', refresh: 'ref-token' },

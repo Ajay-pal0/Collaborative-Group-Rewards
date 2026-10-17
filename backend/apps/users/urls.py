@@ -9,6 +9,7 @@ from .views import (
     CheckEmailView,
     ForgotPasswordView,
     ResetPasswordView,
+    UpdatePasswordView,
 )
 
 urlpatterns = [
@@ -18,8 +19,29 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('pan/verify/', PanVerifyView.as_view(), name='pan-verify'),
     path('pan/status/', PanStatusView.as_view(), name='pan-status'),
-    path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
-    path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
-    path('password-reset/check-email/', CheckEmailView.as_view(), name='password-reset-check-email'),
-    path('password-reset/confirm/', ResetPasswordView.as_view(), name='password-reset-confirm'),
+    path(
+        'update-password/',
+        UpdatePasswordView.as_view(),
+        name='auth-update-password',
+    ),
+    path(
+        'forgot-password/',
+        ForgotPasswordView.as_view(),
+        name='forgot-password',
+    ),
+    path(
+        'reset-password/',
+        ResetPasswordView.as_view(),
+        name='reset-password',
+    ),
+    path(
+        'password-reset/check-email/',
+        CheckEmailView.as_view(),
+        name='password-reset-check-email',
+    ),
+    path(
+        'password-reset/confirm/',
+        ResetPasswordView.as_view(),
+        name='password-reset-confirm',
+    ),
 ]

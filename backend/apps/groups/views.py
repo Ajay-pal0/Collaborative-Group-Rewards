@@ -8,17 +8,13 @@ from rest_framework.permissions import AllowAny
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupCreateSerializer, InvitationSerializer, GroupMemberSerializer
 from .services import create_group, get_or_create_invitation, join_group
-from apps.activities.models import Activity
+from .selectors import get_user_active_groups, get_group_recent_activities
 from apps.activities.serializers import ActivitySerializer
 
 
 class GroupListCreateView(APIView):
     def get(self, request):
-        # Return groups where the user is an active member
-        group_ids = GroupMember.objects.filter(
-            user=request.user, status='active'
-        ).values_list('group_id', flat=True)
-        groups = Group.objects.filter(id__in=group_ids)
+        groups = get_user_active_groups(request.user)
         serializer = GroupSerializer(groups, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -113,6 +109,6 @@ class GroupActivityView(APIView):
         group = get_object_or_404(Group, id=group_id)
         if not GroupMember.objects.filter(group=group, user=request.user, status='active').exists():
             return Response({'detail': 'Access denied.'}, status=status.HTTP_403_FORBIDDEN)
-        activities = Activity.objects.filter(group=group).order_by('-created_at')[:50]
+        activities = get_group_recent_activities(group, limit=50)
         serializer = ActivitySerializer(activities, many=True)
         return Response(serializer.data)

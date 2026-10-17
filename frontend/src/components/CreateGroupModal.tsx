@@ -116,12 +116,12 @@ export default function CreateGroupModal({ open, onClose, onSuccess }: CreateGro
               }}
               placeholder="e.g. Weekend Getaway"
               maxLength={255}
-              className="w-full bg-[#F8F9FC] border border-[#E7E9EE] rounded-xl px-3.5 py-2.5 text-sm text-[#171923] focus:outline-none focus:ring-2 focus:ring-[#635BFF] placeholder-[#98A2B3]"
+              className="w-full bg-[#f8fafc] border border-[#e7e5e4] rounded-xl px-3.5 py-2.5 text-sm text-[#0c0a09] focus:outline-none focus:ring-2 focus:ring-[#0c0a09] placeholder:text-[#a8a29e]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#667085] uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-[#78716c] uppercase tracking-wider mb-2">
               Group Type
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -135,11 +135,11 @@ export default function CreateGroupModal({ open, onClose, onSuccess }: CreateGro
                     onClick={() => setGroupType(opt.value)}
                     className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer space-y-1.5 ${
                       isSelected
-                        ? 'bg-[#635BFF]/10 border-[#635BFF] text-[#635BFF] shadow-xs'
-                        : 'bg-white border-[#E7E9EE] text-[#667085] hover:border-[#D0D5DD] hover:bg-[#F2F4F7]'
+                        ? 'bg-[#0c0a09] border-[#0c0a09] text-white shadow-xs'
+                        : 'bg-white border-[#e7e5e4] text-[#78716c] hover:border-[#d0c4be] hover:bg-[#fafafa]'
                     }`}
                   >
-                    <IconComp className={`w-5 h-5 ${isSelected ? 'text-[#635BFF]' : 'text-[#667085]'}`} />
+                    <IconComp className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-[#78716c]'}`} />
                     <span>{opt.label}</span>
                   </button>
                 );
@@ -147,18 +147,18 @@ export default function CreateGroupModal({ open, onClose, onSuccess }: CreateGro
             </div>
           </div>
 
-          <div className="pt-3 flex justify-end gap-3 border-t border-[#E7E9EE]">
+          <div className="pt-3 flex justify-end gap-3 border-t border-[#e7e5e4]">
             <button
               type="button"
               onClick={handleResetAndClose}
-              className="px-4 py-2.5 text-xs font-semibold text-[#667085] hover:text-[#171923] transition-colors cursor-pointer"
+              className="px-4 py-2.5 text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#635BFF] hover:bg-[#4F46E5] disabled:opacity-50 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+              className="bg-[#0c0a09] hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-98"
             >
               {loading ? (
                 <>
@@ -173,29 +173,29 @@ export default function CreateGroupModal({ open, onClose, onSuccess }: CreateGro
         </form>
       ) : (
         /* Screen 03: Group Created (Success) */
-        <div className="text-center space-y-5 py-2 text-[#171923]">
+        <div className="text-center space-y-5 py-2 text-[#0c0a09]">
           <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-[#635BFF] flex items-center justify-center text-white shadow-md">
+            <div className="w-16 h-16 rounded-full bg-[#0c0a09] flex items-center justify-center text-white shadow-md">
               <Check className="w-9 h-9 stroke-[3]" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-2xl font-extrabold text-[#171923]">Your group is ready!</h3>
-            <p className="text-sm font-bold text-[#635BFF]">{createdGroup.name}</p>
-            <p className="text-xs text-[#667085]">
-              You earned <strong className="text-[#171923] font-bold">100 points</strong> for creating your group.
+            <h3 className="text-2xl font-bold text-[#0c0a09]">Your group is ready!</h3>
+            <p className="text-sm font-bold text-[#b4552d]">{createdGroup.name}</p>
+            <p className="text-xs text-[#78716c]">
+              You earned <strong className="text-[#0c0a09] font-bold">100 points</strong> for creating your group.
             </p>
           </div>
 
-          <div className="bg-[#F8F9FC] border border-[#E7E9EE] rounded-2xl p-4 max-w-xs mx-auto text-center space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#98A2B3]">Your Points</span>
-            <div className="text-3xl font-black text-[#635BFF] font-sans flex items-center justify-center gap-1">
-              100 <Sparkles className="w-5 h-5 text-[#F5B942] fill-[#F5B942]" />
+          <div className="bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-4 max-w-xs mx-auto text-center space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#78716c]">Your Points</span>
+            <div className="text-3xl font-extrabold text-[#b4552d] font-sans flex items-center justify-center gap-1">
+              100 <Sparkles className="w-5 h-5 text-[#d97706]" />
             </div>
           </div>
 
-          <p className="text-xs text-[#667085] max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-[#78716c] max-w-xs mx-auto leading-relaxed">
             Invite your friends and start unlocking rewards together.
           </p>
 
@@ -203,11 +203,11 @@ export default function CreateGroupModal({ open, onClose, onSuccess }: CreateGro
             <button
               type="button"
               onClick={handleCopyInvite}
-              className="w-full bg-[#635BFF] hover:bg-[#4F46E5] text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#0c0a09] hover:bg-neutral-800 text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               {copied ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4" /> Invite link copied!
+                  <CheckCircle2 className="w-4 h-4 text-[#10b981]" /> Invite link copied!
                 </>
               ) : (
                 <>
@@ -219,7 +219,7 @@ export default function CreateGroupModal({ open, onClose, onSuccess }: CreateGro
             <button
               type="button"
               onClick={handleResetAndClose}
-              className="w-full text-xs font-semibold text-[#667085] hover:text-[#171923] py-2 transition-colors cursor-pointer flex items-center justify-center gap-1"
+              className="w-full text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] py-2 transition-colors cursor-pointer flex items-center justify-center gap-1"
             >
               Go to dashboard <ArrowRight className="w-3.5 h-3.5" />
             </button>

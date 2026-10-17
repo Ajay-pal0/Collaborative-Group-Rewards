@@ -4,24 +4,39 @@ import { groupsApi, rewardsApi } from '../services/apiServices';
 import { extractErrorMessage } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
-import type { Group, BenefitState, Task, Activity, UserPointsData } from '../types';
+import { useGroupWebSocket } from './useGroupWebSocket';
+import { useGroupStore } from '../store/useGroupStore';
+import type { Group, BenefitState, Task } from '../types';
 
 export function useGroups(groupId?: string) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user } = useAuth();
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [benefits, setBenefits] = useState<BenefitState[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
+  // Zustand state store
+  const groups = useGroupStore((state) => state.groups);
+  const selectedGroup = useGroupStore((state) => state.selectedGroup);
+  const benefits = useGroupStore((state) => state.benefits);
+  const tasks = useGroupStore((state) => state.tasks);
+  const activities = useGroupStore((state) => state.activities);
+  const completedTaskIds = useGroupStore((state) => state.completedTaskIds);
+  const userPointsData = useGroupStore((state) => state.userPointsData);
+  const loadingGroups = useGroupStore((state) => state.loadingGroups);
+  const loadingDetails = useGroupStore((state) => state.loadingDetails);
 
-  const [userPointsData, setUserPointsData] = useState<UserPointsData | null>(null);
+  const setGroups = useGroupStore((state) => state.setGroups);
+  const setSelectedGroup = useGroupStore((state) => state.setSelectedGroup);
+  const setBenefits = useGroupStore((state) => state.setBenefits);
+  const setTasks = useGroupStore((state) => state.setTasks);
+  const setActivities = useGroupStore((state) => state.setActivities);
+  const setUserPointsData = useGroupStore((state) => state.setUserPointsData);
+  const setCompletedTaskIds = useGroupStore((state) => state.setCompletedTaskIds);
+  const setLoadingGroups = useGroupStore((state) => state.setLoadingGroups);
+  const setLoadingDetails = useGroupStore((state) => state.setLoadingDetails);
+  const applyTaskCompleted = useGroupStore((state) => state.applyTaskCompleted);
+  const applyBenefitClaimed = useGroupStore((state) => state.applyBenefitClaimed);
+  const applyWebSocketEvent = useGroupStore((state) => state.applyWebSocketEvent);
 
-  const [loadingGroups, setLoadingGroups] = useState(true);
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [claimingBenefitId, setClaimingBenefitId] = useState<string | null>(null);
 
@@ -41,7 +56,7 @@ export function useGroups(groupId?: string) {
     } finally {
       setLoadingGroups(false);
     }
-  }, [showToast]);
+  }, [setGroups, setLoadingGroups, showToast]);
 
   // Initial group load & selection logic
   useEffect(() => {
@@ -68,10 +83,11 @@ export function useGroups(groupId?: string) {
     });
 
     return () => { active = false; };
-  }, [groupId, navigate, showToast]);
+  }, [groupId, navigate, setGroups, setLoadingGroups, setSelectedGroup, showToast]);
 
   // 2. Load Dashboard details for selected group
   const fetchGroupDetails = useCallback(async (gId: string) => {
+    setLoadingDetails(true);
     try {
       const [groupRes, benefitsRes, tasksRes, activitiesRes, pointsRes, userPointsRes] = await Promise.all([
         groupsApi.getGroupDetails(gId),
@@ -115,68 +131,76 @@ export function useGroups(groupId?: string) {
     } finally {
       setLoadingDetails(false);
     }
-  }, [showToast, user]);
+  }, [
+    setLoadingDetails,
+    setSelectedGroup,
+    setBenefits,
+    setTasks,
+    setActivities,
+    setUserPointsData,
+    setCompletedTaskIds,
+    showToast,
+    user,
+  ]);
+
+  const selectedGroupId = selectedGroup?.id;
 
   useEffect(() => {
-    const gId = selectedGroup?.id;
-    if (!gId) return;
+    if (!selectedGroupId) return;
 
     let active = true;
-    Promise.all([
-      groupsApi.getGroupDetails(gId),
-      rewardsApi.getBenefits(gId),
-      rewardsApi.getTasks(),
-      groupsApi.getActivities(gId),
-      rewardsApi.getPoints(gId),
-      rewardsApi.getUserPoints(gId),
-    ]).then(([groupRes, benefitsRes, tasksRes, activitiesRes, pointsRes, userPointsRes]) => {
-      if (!active) return;
-      setSelectedGroup(groupRes.data);
-      setBenefits(benefitsRes.data);
-      setTasks(tasksRes.data);
-      setActivities(activitiesRes.data);
-      setUserPointsData(userPointsRes.data);
-
-      const completedSet = new Set<string>();
-      pointsRes.data.transactions.forEach((tx) => {
-        if (tx.action_type === 'TASK_COMPLETED' && tx.reference_id) {
-          const parts = tx.reference_id.split(':');
-          if (parts.length >= 4 && parts[2] === 'TASK') {
-            const txUserId = parts[1];
-            const taskId = parts[3];
-            if (user && txUserId === user.id) {
-              completedSet.add(taskId);
-            }
-          } else {
-            const partsTask = tx.reference_id.split(':TASK:');
-            if (partsTask.length === 2 && user) {
-              const prefixParts = partsTask[0].split(':');
-              if (prefixParts.length >= 2 && prefixParts[1] === user.id) {
-                completedSet.add(partsTask[1]);
-              }
-            }
-          }
-        }
-      });
-      setCompletedTaskIds(completedSet);
-    }).catch((err) => {
-      if (active) showToast(extractErrorMessage(err), 'error');
-    }).finally(() => {
-      if (active) setLoadingDetails(false);
+    void Promise.resolve().then(() => {
+      if (active) {
+        fetchGroupDetails(selectedGroupId);
+      }
     });
 
-    return () => { active = false; };
-  }, [selectedGroup?.id, user, showToast]);
+    return () => {
+      active = false;
+    };
+  }, [selectedGroupId, fetchGroupDetails]);
 
-  // 3. Complete Task Handler
+  // Live WebSocket updates: updates Zustand store in real time with 0 extra API calls!
+  const handleWebSocketUpdate = useCallback((event: string, data?: Record<string, unknown>) => {
+    if (event === 'refresh') {
+      if (selectedGroupId) {
+        fetchGroupDetails(selectedGroupId);
+      }
+      return;
+    }
+
+    applyWebSocketEvent({
+      event,
+      data,
+      currentUserId: user?.id,
+      currentUserEmail: user?.email,
+    });
+  }, [applyWebSocketEvent, fetchGroupDetails, selectedGroupId, user?.email, user?.id]);
+
+  useGroupWebSocket({
+    groupId: selectedGroupId,
+    onUpdate: handleWebSocketUpdate,
+    enabled: Boolean(selectedGroupId),
+  });
+
+  // 3. Complete Task Handler: Updates Zustand store directly from response without firing 14 extra API calls
   const handleCompleteTask = async (task: Task) => {
     if (!selectedGroup) return;
     setCompletingTaskId(task.id);
     try {
-      await rewardsApi.completeTask(selectedGroup.id, task.id);
+      const res = await rewardsApi.completeTask(selectedGroup.id, task.id);
       showToast(`Task "${task.name}" completed! +${task.points} points awarded! 🎉`, 'success');
-      await fetchGroupDetails(selectedGroup.id);
-      await fetchGroups();
+
+      // Update Zustand store locally without redundant API polling
+      applyTaskCompleted({
+        taskId: task.id,
+        taskName: task.name,
+        points: task.points,
+        updatedGroup: res.data?.group,
+        userPoints: res.data?.user_points,
+        currentUserId: user?.id,
+        currentUserEmail: user?.email,
+      });
     } catch (err) {
       showToast(extractErrorMessage(err), 'error');
     } finally {
@@ -188,12 +212,17 @@ export function useGroups(groupId?: string) {
   const handleClaimBenefit = async (bState: BenefitState) => {
     if (!selectedGroup) return;
     const bId = bState.benefit.id;
+    const bPts = bState.benefit.required_points;
     setClaimingBenefitId(bId);
     try {
-      await rewardsApi.claimBenefit(selectedGroup.id, bId);
+      applyBenefitClaimed({ benefitId: bId, points: bPts });
+      const res = await rewardsApi.claimBenefit(selectedGroup.id, bId);
       showToast(`Benefit "${bState.benefit.name}" claimed! 🎁`, 'success');
       setUnlockedBenefit(null);
-      setClaimedBenefit(bState);
+      setClaimedBenefit({ ...bState, state: 'claimed' });
+      if (res.data?.user_points) {
+        setUserPointsData(res.data.user_points);
+      }
       await fetchGroupDetails(selectedGroup.id);
     } catch (err) {
       showToast(extractErrorMessage(err), 'error');

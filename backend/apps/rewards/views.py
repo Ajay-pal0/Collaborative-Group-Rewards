@@ -1,4 +1,3 @@
-from django.db.models import Sum, Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
@@ -7,12 +6,13 @@ from rest_framework.response import Response
 from apps.groups.models import Group, GroupMember
 from apps.groups.serializers import GroupSerializer
 from apps.users.serializers import UserSerializer
-from .models import Task, Benefit, PointTransaction
+from .models import Task, Benefit
 from .serializers import (
     TaskSerializer, BenefitStateSerializer, BenefitClaimSerializer,
     PointTransactionSerializer
 )
 from .services import complete_task, get_benefit_states, claim_benefit, complete_profile
+from .selectors import get_group_points_summary, get_user_points_summary
 
 
 class TaskListView(APIView):
@@ -37,9 +37,15 @@ class TaskCompleteView(APIView):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_409_CONFLICT)
 
+        group.refresh_from_db()
+        user_points_summary = get_user_points_summary(
+            group, membership, request.user
+        )
+
         return Response({
             'transaction': PointTransactionSerializer(tx).data,
             'group': GroupSerializer(group, context={'request': request}).data,
+            'user_points': user_points_summary,
         })
 
 
@@ -66,7 +72,15 @@ class BenefitClaimView(APIView):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_409_CONFLICT)
 
-        return Response(BenefitClaimSerializer(claim).data, status=status.HTTP_201_CREATED)
+        membership = GroupMember.objects.filter(
+            group=group, user=request.user, status='active'
+        ).first()
+        data = BenefitClaimSerializer(claim).data
+        if membership:
+            data['user_points'] = get_user_points_summary(
+                group, membership, request.user
+            )
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class GroupPointsView(APIView):
@@ -75,40 +89,21 @@ class GroupPointsView(APIView):
         membership = GroupMember.objects.filter(group=group, user=request.user, status='active').first()
         if not membership:
             return Response({'detail': 'Access denied.'}, status=status.HTTP_403_FORBIDDEN)
-        
-        transactions = PointTransaction.objects.filter(group=group).order_by('-created_at')
-        user_txs = PointTransaction.objects.filter(group=group, member=membership)
-        user_points = user_txs.aggregate(total=Sum('points'))['total'] or 0
 
-        member_stats = (
-            PointTransaction.objects.filter(group=group)
-            .values('member_id', 'member__user__id', 'member__user__name', 'member__user__email')
-            .annotate(total_points=Sum('points'), task_count=Count('id'))
-            .order_by('-total_points')
-        )
-
-        member_points_list = [
-            {
-                'member_id': str(stat['member_id']),
-                'user_id': str(stat['member__user__id']),
-                'user_name': stat['member__user__name'] or stat['member__user__email'] or 'Member',
-                'user_email': stat['member__user__email'],
-                'points_earned': stat['total_points'],
-                'tasks_count': stat['task_count'],
-                'is_current_user': str(stat['member__user__id']) == str(request.user.id),
-            }
-            for stat in member_stats
-        ]
-
-        group_total = group.total_points
-        user_contribution_pct = round((user_points / group_total * 100), 1) if group_total > 0 else 0.0
-
+        summary = get_group_points_summary(group, membership, request.user)
         return Response({
-            'total': group_total,
-            'user_points': user_points,
-            'user_contribution_pct': user_contribution_pct,
-            'member_points': member_points_list,
-            'transactions': PointTransactionSerializer(transactions, many=True).data,
+            'total': summary['total'],
+            'user_points': summary['user_points'],
+            'user_total_points': summary.get(
+                'user_total_points', summary['user_points']
+            ),
+            'benefit_points': summary.get('benefit_points', 0),
+            'task_points': summary.get('task_points', 0),
+            'user_contribution_pct': summary['user_contribution_pct'],
+            'member_points': summary['member_points'],
+            'transactions': PointTransactionSerializer(
+                summary['transactions'], many=True
+            ).data,
         })
 
 
@@ -119,40 +114,8 @@ class UserPointsView(APIView):
         if not membership:
             return Response({'detail': 'Access denied.'}, status=status.HTTP_403_FORBIDDEN)
 
-        user_txs = PointTransaction.objects.filter(group=group, member=membership)
-        user_points = user_txs.aggregate(total=Sum('points'))['total'] or 0
-
-        member_stats = (
-            PointTransaction.objects.filter(group=group)
-            .values('member_id', 'member__user__id', 'member__user__name', 'member__user__email')
-            .annotate(total_points=Sum('points'), task_count=Count('id'))
-            .order_by('-total_points')
-        )
-
-        member_points_list = [
-            {
-                'member_id': str(stat['member_id']),
-                'user_id': str(stat['member__user__id']),
-                'user_name': stat['member__user__name'] or stat['member__user__email'] or 'Member',
-                'user_email': stat['member__user__email'],
-                'points_earned': stat['total_points'],
-                'tasks_count': stat['task_count'],
-                'is_current_user': str(stat['member__user__id']) == str(request.user.id),
-            }
-            for stat in member_stats
-        ]
-
-        group_total = group.total_points
-        user_contribution_pct = round((user_points / group_total * 100), 1) if group_total > 0 else 0.0
-
-        return Response({
-            'group_id': str(group.id),
-            'group_total_points': group_total,
-            'user_points': user_points,
-            'user_contribution_pct': user_contribution_pct,
-            'user_tasks_completed': user_txs.filter(action_type='TASK_COMPLETED').count(),
-            'member_points': member_points_list,
-        })
+        summary = get_user_points_summary(group, membership, request.user)
+        return Response(summary)
 
 
 class ProfileCompleteView(APIView):
@@ -172,26 +135,23 @@ class ProfileCompleteView(APIView):
 
         name = request.data.get('name')
         phone = request.data.get('phone')
-        updated = False
-        if name and name.strip() and name != request.user.name:
-            request.user.name = name.strip()
-            updated = True
-        if phone is not None and phone != request.user.phone:
-            request.user.phone = phone.strip()
-            updated = True
-        if updated:
-            request.user.save()
 
         try:
-            tx = complete_profile(group, membership)
+            tx = complete_profile(group, membership, name=name, phone=phone)
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_409_CONFLICT)
+
+        group.refresh_from_db()
+        user_points_summary = get_user_points_summary(
+            group, membership, request.user
+        )
 
         user_name = request.user.name or request.user.email or 'User'
         return Response({
             'message': f'{user_name} completed profile details and earned +{tx.points} points!',
             'transaction': PointTransactionSerializer(tx).data,
             'group': GroupSerializer(group, context={'request': request}).data,
+            'user_points': user_points_summary,
             'user': UserSerializer(request.user).data,
         }, status=status.HTTP_201_CREATED)
 

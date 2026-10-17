@@ -49,6 +49,29 @@ def validate_pan_format(pan: str | None) -> bool:
     return bool(PAN_REGEX.match(str(pan).strip().upper()))
 
 
+def mask_aadhaar(aadhaar: str | None) -> str:
+    """
+    Masks a 12-digit Aadhaar number preserving the last 4 digits.
+    Example: 123456789012 -> XXXXXXXX9012
+    """
+    if not aadhaar:
+        return ''
+    clean = re.sub(r'[\s\-]+', '', str(aadhaar))
+    if len(clean) >= 4:
+        return f'{"X" * (len(clean) - 4)}{clean[-4:]}'
+    return 'XXXX'
+
+
+def validate_aadhaar_format(aadhaar: str | None) -> bool:
+    """
+    Validates whether the provided Aadhaar number conforms to 12 digits.
+    """
+    if not aadhaar:
+        return False
+    clean = re.sub(r'[\s\-]+', '', str(aadhaar))
+    return bool(re.match(r'^\d{12}$', clean))
+
+
 def sanitize_headers(headers: dict[str, Any] | None) -> dict[str, Any]:
     """
     Returns a copy of headers with sensitive values masked.
@@ -67,7 +90,7 @@ def sanitize_headers(headers: dict[str, Any] | None) -> dict[str, Any]:
 
 def sanitize_payload(payload: Any) -> Any:
     """
-    Recursively masks sensitive data (PANs, tokens, secrets) in JSON/dict payloads for audit logging.
+    Recursively masks sensitive data (PANs, Aadhaar, tokens, secrets) in JSON/dict payloads for audit logging.
     """
     if payload is None:
         return None
@@ -75,8 +98,12 @@ def sanitize_payload(payload: Any) -> Any:
         cleaned: dict[str, Any] = {}
         for key, value in payload.items():
             key_lower = str(key).lower()
-            if key_lower == 'pan':
+            if key_lower in ('pan', 'pan_number'):
                 cleaned[key] = mask_pan(str(value)) if value else value
+            elif key_lower in ('aadhaar', 'aadhaar_number', 'uid'):
+                cleaned[key] = mask_aadhaar(str(value)) if value else value
+            elif key_lower in ('id_number',) and value and validate_pan_format(str(value)):
+                cleaned[key] = mask_pan(str(value))
             elif key_lower in SENSITIVE_PAYLOAD_KEYS or 'secret' in key_lower:
                 cleaned[key] = '[REDACTED]'
             else:
@@ -85,3 +112,4 @@ def sanitize_payload(payload: Any) -> Any:
     elif isinstance(payload, list):
         return [sanitize_payload(item) for item in payload]
     return payload
+

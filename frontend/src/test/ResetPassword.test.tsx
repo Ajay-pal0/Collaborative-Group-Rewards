@@ -69,7 +69,11 @@ describe('ResetPasswordPage', () => {
   it('calls resetPassword API and displays success state', async () => {
     vi.mocked(authApi.resetPassword).mockResolvedValueOnce({
       data: { message: 'Password has been reset successfully.' },
-    } as any);
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {} as unknown as import('axios').InternalAxiosRequestConfig,
+    });
 
     render(
       <MemoryRouter initialEntries={['/reset-password/valid-token-xyz']}>

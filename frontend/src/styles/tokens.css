@@ -1,0 +1,99 @@
+/**
+ * Collaborative Group Rewards - Design Tokens
+ * Samaro.ai-inspired visual principles:
+ * - Spacious layouts, purposeful whitespace, and clear content hierarchy
+ * - Clean page backgrounds (#f5f5f5 / #fafafa) and restrained surface styling
+ * - High-contrast readable typography (Inter, font-weight 400/500/600/700)
+ * - Deep obsidian primary actions (#0c0a09 / #292524)
+ * - Restrained warm terracotta / bronze accent (#b4552d / #d98a5a)
+ * - Subtle stone borders (#e7e5e4 / #d6d3d1), polished cards, accessible contrast
+ */
+
+:root {
+  /* Brand Primary (Samaro Obsidian / Deep Warm Stone) */
+  --c-primary: #0c0a09;
+  --c-primary-hover: #292524;
+  --c-primary-active: #000000;
+  --c-primary-light: #f5f5f4;
+  --c-primary-subtle: rgba(12, 10, 9, 0.05);
+  --c-primary-border: rgba(12, 10, 9, 0.15);
+  --c-primary-text: #ffffff;
+
+  /* Accent (Warm Terracotta / Bronze) */
+  --c-accent: #b4552d;
+  --c-accent-hover: #9a4420;
+  --c-accent-light: #fff7ed;
+  --c-accent-subtle: rgba(180, 85, 45, 0.08);
+  --c-accent-border: rgba(180, 85, 45, 0.25);
+  --c-accent-text: #7c2d12;
+
+  /* Gold / Rewards (Warm Amber / Bronze) */
+  --c-gold: #d97706;
+  --c-gold-hover: #b45309;
+  --c-gold-light: #fffbeb;
+  --c-gold-subtle: rgba(217, 119, 6, 0.08);
+  --c-gold-border: rgba(217, 119, 6, 0.25);
+  --c-gold-text: #92400e;
+
+  /* Neutrals & Surfaces */
+  --c-page-bg: #f5f5f5;
+  --c-surface: #ffffff;
+  --c-surface-hover: #fafafa;
+  --c-surface-secondary: #f5f5f4;
+  --c-surface-tertiary: #e7e5e4;
+
+  /* Typography Colors */
+  --c-text-primary: #0c0a09;
+  --c-text-secondary: #44403c;
+  --c-text-muted: #78716c;
+  --c-text-subtle: #a8a29e;
+  --c-text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --c-border: #e7e5e4;
+  --c-border-subtle: #f0efed;
+  --c-border-strong: #d6d3d1;
+
+  /* Focus Ring */
+  --c-focus-ring: #0c0a09;
+  --c-focus-offset: #ffffff;
+
+  /* Semantic Feedback */
+  --c-success: #059669;
+  --c-success-light: #ecfdf5;
+  --c-success-border: #a7f3d0;
+  --c-success-text: #065f46;
+
+  --c-warning: #d97706;
+  --c-warning-light: #fffbeb;
+  --c-warning-border: #fde68a;
+  --c-warning-text: #92400e;
+
+  --c-error: #dc2626;
+  --c-error-light: #fef2f2;
+  --c-error-border: #fecaca;
+  --c-error-text: #991b1b;
+
+  --c-info: #0284c7;
+  --c-info-light: #f0f9ff;
+  --c-info-border: #bae6fd;
+  --c-info-text: #0369a1;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows (Refined, diffused, stone-tinted) */
+  --shadow-xs: 0 1px 2px rgba(12, 10, 9, 0.04);
+  --shadow-sm: 0 1px 3px rgba(12, 10, 9, 0.06), 0 1px 2px rgba(12, 10, 9, 0.03);
+  --shadow-md: 0 4px 16px -2px rgba(12, 10, 9, 0.08), 0 2px 6px -2px rgba(12, 10, 9, 0.04);
+  --shadow-lg: 0 16px 32px -4px rgba(12, 10, 9, 0.10), 0 4px 12px -2px rgba(12, 10, 9, 0.05);
+  --shadow-xl: 0 20px 44px -20px rgba(12, 10, 9, 0.18);
+  --shadow-primary: 0 4px 14px rgba(12, 10, 9, 0.16);
+  --shadow-accent: 0 4px 14px rgba(180, 85, 45, 0.20);
+}

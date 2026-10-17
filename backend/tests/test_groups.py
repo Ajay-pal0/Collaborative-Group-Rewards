@@ -278,28 +278,29 @@ class TaskCompletionTest(TestCase):
         self.assertEqual(response.data['group_total_points'], 525) # 275 ajay + 250 sanjay (100 join + 150 task) = 525
         self.assertEqual(len(response.data['member_points']), 2)
 
-    def test_benefit_claim_adds_user_points_without_increasing_group_points(self):
+    def test_benefit_claim_does_not_inflate_user_points_or_group_points(self):
         user = make_user('benefit_user@example.com', 'Benefit User')
         group = create_group(user, 'Benefit Points Group', 'team')
         benefit_100 = Benefit.objects.create(name='Free Coffee', required_points=100, status='active')
 
         pts_before_claim = group.total_points
-        self.assertEqual(pts_before_claim, 100) # Created group = 100
+        self.assertEqual(pts_before_claim, 100)  # Created group = 100
 
         from apps.rewards.services import claim_benefit
         claim_benefit(group, benefit_100, user)
 
         group.refresh_from_db()
-        self.assertEqual(group.total_points, pts_before_claim) # Group total points remain 100!
+        self.assertEqual(group.total_points, pts_before_claim)  # Group total remains 100
 
         client = APIClient()
         client.force_authenticate(user=user)
         resp = client.get(f'/api/groups/{group.id}/user-points/')
         self.assertEqual(resp.status_code, 200)
-        # User points = 100 (group created) + 100 (benefit claimed) = 200 pts
-        self.assertEqual(resp.data['user_points'], 200)
+        # User contribution points only reflect earned points (100 group created), NOT claimed benefit points
+        self.assertEqual(resp.data['user_points'], 100)
         # Group total points remains 100 pts
         self.assertEqual(resp.data['group_total_points'], 100)
+        self.assertEqual(resp.data['user_contribution_pct'], 100.0)
 
 
 

@@ -12,24 +12,32 @@ import {
   Sparkles,
   UsersRound,
   Gift,
-  Zap,
   User,
   Check,
   Bell,
   ChevronDown,
   Plus,
-  LayoutDashboard,
   LogOut,
-  Sparkle,
   ShieldCheck,
-  Lock
+  Lock,
+  Coins,
+  CheckCircle2,
+  TrendingUp,
 } from 'lucide-react';
 
 import MembersModal from '../components/MembersModal';
 import ActivityModal from '../components/ActivityModal';
 import BenefitsModal from '../components/BenefitsModal';
 import ProfileModal from '../components/ProfileModal';
+import CreditDashboardModal from '../components/CreditDashboardModal';
+import VerificationBadge from '../components/VerificationBadge';
 import { calculateSegmentedProgress } from '../lib/progress';
+import { Button } from '../components/ui';
+
+import { MilestoneProgressSection } from '../features/dashboard/components/MilestoneProgressSection';
+import { IdentityVerificationBanner } from '../features/dashboard/components/IdentityVerificationBanner';
+import { GroupTasksSection } from '../features/dashboard/components/GroupTasksSection';
+import { MobileBottomNav } from '../features/dashboard/components/MobileBottomNav';
 
 function getUserColor(name: string) {
   const colors = [
@@ -48,7 +56,6 @@ function getUserColor(name: string) {
 }
 
 export default function GroupsDashboardPage() {
-
   const { groupId } = useParams<{ groupId?: string }>();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -62,7 +69,6 @@ export default function GroupsDashboardPage() {
     activities,
     completedTaskIds,
     loadingGroups,
-    loadingDetails,
     completingTaskId,
     unlockedBenefit,
     setUnlockedBenefit,
@@ -82,8 +88,9 @@ export default function GroupsDashboardPage() {
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [benefitsModalOpen, setBenefitsModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileModalTab, setProfileModalTab] = useState<'overview' | 'details' | 'kyc'>('overview');
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
-
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const groupDropdownRef = useRef<HTMLDivElement>(null);
@@ -110,60 +117,99 @@ export default function GroupsDashboardPage() {
   const thresholds = [200, 500, 1000];
   const nextThreshold = thresholds.find((t) => totalPoints < t) || 1000;
   const pointsToGo = Math.max(0, nextThreshold - totalPoints);
-
   const progressPercent = Math.min(100, Math.round(calculateSegmentedProgress(totalPoints)));
-
   const userName = user?.name || 'User';
+  const userPts = userPointsData?.user_points ?? 0;
+  const claimedBenefitsSum = benefits
+    .filter((b) => b.state === 'claimed')
+    .reduce((sum, b) => sum + (b.benefit.required_points || 0), 0);
+  const benefitPts = Math.max(userPointsData?.benefit_points ?? 0, claimedBenefitsSum);
+  const ownTotalPts = userPointsData?.user_total_points && userPointsData.user_total_points >= (userPts + benefitPts)
+    ? userPointsData.user_total_points
+    : (userPts + benefitPts);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FC] text-[#171923] flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f5] text-[#0c0a09] flex flex-col">
       {/* Top Header Bar */}
-      <header className="bg-white border-b border-[#E7E9EE] px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+      <header className="bg-white/95 backdrop-blur-md border-b border-[#e7e5e4] px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-4 sm:gap-6">
           {/* App Brand Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white flex items-center justify-center shadow-sm">
-              <Sparkles className="w-5 h-5 fill-white/20" />
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/groups')}>
+            <div className="w-8 h-8 rounded-xl bg-[#0c0a09] text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4 fill-white/20 text-[#ffdcc3]" />
             </div>
-            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#171923] hidden xs:inline">Collaborative Group Rewards</span>
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#0c0a09] hidden xs:inline">
+              Collaborative Group Rewards
+            </span>
           </div>
 
-          {/* Divider */}
-          <div className="h-6 w-px bg-[#E7E9EE]" />
+          {/* Desktop Nav Links */}
+          <nav className="hidden lg:flex items-center gap-1.5 pl-2">
+            <button
+              onClick={() => navigate('/groups')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#0c0a09] text-white transition-all cursor-pointer"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => navigate('/credit')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] hover:bg-[#f5f5f4] transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>CIBIL Credit</span>
+            </button>
+            <button
+              onClick={() => navigate('/profile')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] hover:bg-[#f5f5f4] transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Profile & KYC</span>
+            </button>
+          </nav>
+
+          <div className="h-6 w-px bg-[#e7e5e4] hidden sm:block" />
 
           {/* Active Group Selector Dropdown */}
           <div className="relative" ref={groupDropdownRef}>
-            <button
-              onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
-              className="flex items-center gap-3 p-1.5 pl-2 pr-3 rounded-2xl bg-white border border-[#E7E9EE] hover:border-[#635BFF]/40 hover:shadow-xs transition-all cursor-pointer text-left"
-            >
-              <div className="w-9 h-9 rounded-xl bg-[#635BFF]/10 text-[#635BFF] font-bold flex items-center justify-center border border-[#635BFF]/20 shrink-0">
-                {selectedGroup?.name ? selectedGroup.name.charAt(0).toUpperCase() : <UsersRound className="w-4 h-4" />}
-              </div>
-              <div className="hidden sm:block">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-xs text-[#171923] max-w-[140px] truncate">
-                    {selectedGroup?.name || 'Select Group'}
-                  </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-[#667085] transition-transform duration-200 ${groupDropdownOpen ? 'rotate-180' : ''}`} />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
+                className="flex items-center gap-2.5 p-1.5 pl-2 pr-3 rounded-full bg-[#f5f5f4] border border-[#e7e5e4] hover:border-[#d6d3d1] hover:shadow-xs transition-all cursor-pointer text-left"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#0c0a09] text-white font-bold flex items-center justify-center text-xs shrink-0">
+                  {selectedGroup?.name ? selectedGroup.name.charAt(0).toUpperCase() : <UsersRound className="w-3.5 h-3.5" />}
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#667085]">
-                  <span className="capitalize">{selectedGroup?.group_type || 'Group'}</span>
-                  <span>•</span>
-                  <span className="font-bold text-[#635BFF]">{selectedGroup?.total_points || 0} pts</span>
+                <div className="hidden sm:block">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-[#0c0a09] max-w-[140px] truncate">
+                      {selectedGroup?.name || 'Select Group'}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 text-[#78716c] transition-transform duration-200 ${groupDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#78716c]">
+                    <span className="capitalize">{selectedGroup?.group_type || 'Group'}</span>
+                    <span>•</span>
+                    <span className="font-bold text-[#0c0a09]">{selectedGroup?.total_points || 0} pts</span>
+                  </div>
                 </div>
-              </div>
-              <ChevronDown className="w-4 h-4 text-[#667085] sm:hidden" />
-            </button>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
+                className="hidden lg:inline-flex text-xs font-semibold text-[#78716c] hover:text-[#0c0a09] px-2.5 py-1.5 hover:bg-[#f5f5f4] rounded-lg transition-colors cursor-pointer"
+              >
+                Switch Group
+              </button>
+            </div>
 
             {/* Dropdown Menu */}
             {groupDropdownOpen && (
-              <div className="absolute left-0 mt-2 w-72 bg-white border border-[#E7E9EE] rounded-2xl shadow-2xl py-2 z-30 space-y-1">
-                <div className="px-4 py-2 border-b border-[#E7E9EE] flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#98A2B3] uppercase tracking-wider">Your Groups ({groups.length})</span>
-                  <span className="text-[10px] font-bold text-[#635BFF] bg-[#635BFF]/10 px-2 py-0.5 rounded-full">Select active</span>
+              <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#e7e5e4] p-2 z-30 animate-slide-up">
+                <div className="px-3 py-2 text-[10px] font-bold text-[#78716c] uppercase tracking-wider flex items-center justify-between">
+                  <span>Your Groups</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#f5f5f4] text-[#78716c]">
+                    {groups.length}
+                  </span>
                 </div>
-                <div className="max-h-64 overflow-y-auto py-1 px-2 space-y-1">
+                <div className="max-h-60 overflow-y-auto space-y-1">
                   {groups.map((g) => {
                     const isSelected = selectedGroup?.id === g.id;
                     return (
@@ -173,42 +219,47 @@ export default function GroupsDashboardPage() {
                           selectGroup(g);
                           setGroupDropdownOpen(false);
                         }}
-                        className={`w-full text-left p-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#635BFF]/10 text-[#635BFF] border border-[#635BFF]/20'
-                            : 'text-[#171923] hover:bg-[#F8F9FC] border border-transparent'
-                        }`}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${isSelected
+                            ? 'bg-[#f5f5f4] border border-[#e7e5e4] text-[#0c0a09] font-bold shadow-2xs'
+                            : 'hover:bg-[#fafaf9] border border-transparent text-[#44403c]'
+                          }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-7 h-7 rounded-lg font-bold flex items-center justify-center text-xs shrink-0 ${
-                            isSelected ? 'bg-[#635BFF] text-white' : 'bg-[#F2F4F7] text-[#667085]'
-                          }`}>
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                          <div
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${isSelected
+                                ? 'bg-[#0c0a09] text-white shadow-2xs'
+                                : 'bg-[#e7e5e4]/60 text-[#78716c]'
+                              }`}
+                          >
                             {g.name.charAt(0).toUpperCase()}
                           </div>
-                          <div className="truncate">
-                            <p className="font-bold truncate text-xs">{g.name}</p>
-                            <p className="text-[10px] text-[#667085] capitalize">{g.group_type}</p>
-                          </div>
+                          <span className="truncate">{g.name}</span>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] font-bold text-[#635BFF] bg-[#635BFF]/5 px-2 py-0.5 rounded-md">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${isSelected
+                                ? 'bg-[#fff1eb] text-[#b4552d] border border-[#fed7aa]'
+                                : 'bg-[#f5f5f4] text-[#78716c]'
+                              }`}
+                          >
                             {g.total_points} pts
                           </span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-[#635BFF]" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#059669] shrink-0" />}
                         </div>
                       </button>
                     );
                   })}
                 </div>
-                <div className="pt-2 border-t border-[#E7E9EE] px-2">
+                <div className="pt-2 border-t border-[#e7e5e4] mt-1">
                   <button
                     onClick={() => {
                       setGroupDropdownOpen(false);
                       setCreateModalOpen(true);
                     }}
-                    className="w-full bg-[#635BFF] hover:bg-[#4F46E5] text-white text-xs font-bold py-2 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-bold text-[#0c0a09] hover:bg-[#f5f5f4] transition-colors cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 stroke-[3]" /> Create new group
+                    <Plus className="w-4 h-4 text-[#78716c]" />
+                    <span>Create New Group</span>
                   </button>
                 </div>
               </div>
@@ -216,534 +267,561 @@ export default function GroupsDashboardPage() {
           </div>
         </div>
 
-        {/* Right Header Actions (Bell & User Profile) */}
-        <div className="flex items-center gap-3">
-          {/* Notification Bell */}
-          <button className="relative w-9 h-9 rounded-xl bg-[#F8F9FC] border border-[#E7E9EE] flex items-center justify-center text-[#667085] hover:text-[#171923] transition-colors cursor-pointer">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-[#F04438] rounded-full border-2 border-white" />
+        {/* Right Nav Action Buttons */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => showToast('Group Rewards Notification', 'info')}
+            className="w-8 h-8 rounded-full border border-[#e7e5e4] hover:bg-[#f5f5f4] text-[#78716c] flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Notifications"
+          >
+            <Bell className="w-3.5 h-3.5" />
           </button>
 
-          {/* User Profile Pill */}
+          {selectedGroup && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setInviteModalOpen(true)}
+              icon={<Plus className="w-3.5 h-3.5" />}
+              className="hidden sm:inline-flex"
+            >
+              Invite (+25 pts)
+            </Button>
+          )}
+
+          {/* User Profile Menu */}
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-xl hover:bg-[#F8F9FC] transition-colors cursor-pointer"
+              className="flex items-center gap-2 p-1.5 rounded-full hover:bg-[#f5f5f4] border border-transparent hover:border-[#e7e5e4] transition-all cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-full bg-[#635BFF] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-[#0c0a09] text-white font-bold text-xs flex items-center justify-center shadow-xs">
                 {userName.charAt(0).toUpperCase()}
               </div>
-              <span className="font-bold text-xs text-[#171923] hidden sm:inline">{userName}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-[#667085] transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-[#78716c] transition-transform duration-200 hidden sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E7E9EE] rounded-2xl shadow-xl py-2 z-30 space-y-1">
-                <div className="px-4 py-2 border-b border-[#E7E9EE]">
-                  <p className="text-xs font-bold text-[#171923]">{userName}</p>
-                  <p className="text-[11px] text-[#667085] truncate">{user?.email}</p>
+              <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#e7e5e4] p-2 z-30 animate-slide-up">
+                <div className="p-3 border-b border-[#e7e5e4]">
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#0c0a09] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-extrabold text-xs text-[#0c0a09] truncate">{userName}</p>
+                      <p className="text-[10px] text-[#78716c] truncate">{user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <VerificationBadge type="pan" status={user?.pan_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
+                    <VerificationBadge type="aadhaar" status={user?.aadhaar_verified ? 'VERIFIED' : 'NOT_STARTED'} size="sm" />
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    setProfileModalOpen(true);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-xs font-semibold text-[#171923] hover:bg-[#F8F9FC] flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <User className="w-4 h-4 text-[#635BFF]" /> My Profile (+50 pts)
-                </button>
-                <button
-                  onClick={logout}
-                  className="w-full text-left px-4 py-2.5 text-xs font-semibold text-[#F04438] hover:bg-[#F04438]/5 flex items-center gap-2 transition-colors cursor-pointer border-t border-[#E7E9EE]"
-                >
-                  <LogOut className="w-4 h-4" /> Log out
-                </button>
+
+                <div className="p-1 space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate('/profile');
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-[#0c0a09] hover:bg-[#f5f5f4] transition-colors cursor-pointer text-left"
+                  >
+                    <User className="w-4 h-4 text-[#78716c]" />
+                    <span>Profile & KYC Verification</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate('/credit');
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-[#0c0a09] hover:bg-[#f5f5f4] transition-colors cursor-pointer text-left"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-[#059669]" />
+                    <span>CIBIL Credit Intelligence</span>
+                  </button>
+                  <div className="my-1 border-t border-[#e7e5e4]" />
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-[#dc2626] hover:bg-[#fef2f2] transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-6 space-y-6 w-full flex-1 pb-24 lg:pb-12">
-
-
-          {loadingGroups ? (
-            <div className="space-y-4">
-              <Skeleton className="h-44 w-full rounded-3xl" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <CardSkeleton />
-                <CardSkeleton />
-                <CardSkeleton />
-              </div>
+      {/* Main Body */}
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 space-y-6 flex-1 pb-24 lg:pb-8">
+        {loadingGroups ? (
+          <div className="space-y-6">
+            <Skeleton className="h-44 rounded-3xl" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
             </div>
-          ) : groups.length === 0 ? (
-            /* Empty State */
-            <div className="bg-white border border-[#E7E9EE] rounded-3xl p-12 text-center max-w-xl mx-auto space-y-5 my-12 shadow-sm">
-              <div className="w-16 h-16 bg-[#635BFF]/10 text-[#635BFF] rounded-2xl flex items-center justify-center mx-auto">
-                <Sparkles className="w-8 h-8" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-[#171923]">Welcome to Collaborative Group Rewards</h2>
-                <p className="text-[#667085] text-xs max-w-md mx-auto leading-relaxed">
-                  Start your journey by creating a private group or joining one with an invite token.
-                </p>
-              </div>
-              <button
-                onClick={() => setCreateModalOpen(true)}
-                className="bg-[#635BFF] hover:bg-[#4F46E5] text-white font-semibold px-6 py-3 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
-              >
-                + Create your group (+100 pts)
-              </button>
+          </div>
+        ) : groups.length === 0 ? (
+          /* Empty State */
+          <div className="bg-white border border-[#e7e5e4] rounded-3xl p-12 text-center max-w-xl mx-auto space-y-5 my-12 shadow-sm animate-fade-in">
+            <div className="w-16 h-16 bg-[#fafafa] border border-[#e7e5e4] text-[#0c0a09] rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+              <Sparkles className="w-8 h-8 text-[#b4552d]" />
             </div>
-          ) : (
-            /* Dashboard Content matching Screen 06 */
-            <>
-              {/* Banner Greeting & Purple Points Card */}
-              <div className="space-y-4">
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171923]">
-                    Hi, {userName.split(' ')[0]}! 👋
-                  </h1>
-                  <p className="text-xs sm:text-sm text-[#667085] mt-1">Here's what's happening with your group.</p>
-                </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-[#0c0a09]">Welcome to Collaborative Group Rewards</h2>
+              <p className="text-[#78716c] text-xs max-w-md mx-auto leading-relaxed">
+                Start your journey by creating a private group or joining one with an invite token.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setCreateModalOpen(true)}
+            >
+              + Create your group (+100 pts)
+            </Button>
+          </div>
+        ) : (
+          /* Main Group Dashboard Content */
+          <>
+            {/* Milestone Progress Hero Section */}
+            <MilestoneProgressSection
+              selectedGroup={selectedGroup}
+              totalPoints={totalPoints}
+              pointsToGo={pointsToGo}
+              progressPercent={progressPercent}
+              userPointsData={userPointsData}
+              userName={userName}
+              user={user}
+              onRedeemPerks={() => setBenefitsModalOpen(true)}
+            />
 
-                {/* Main Vibrant Purple Hero Banner Card */}
-                <div className="bg-gradient-to-r from-[#5C4EFE] to-[#635BFF] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                    {/* Left Points Metric */}
-                    <div className="md:col-span-5 space-y-2">
-                      <span className="text-xs font-semibold text-white/80 uppercase tracking-wider block">Group Total Points</span>
-                      <div className="text-4xl sm:text-5xl font-black tracking-tight font-sans flex items-center gap-2">
-                        {totalPoints} <Sparkle className="w-7 h-7 text-[#F5B942] fill-[#F5B942] animate-pulse-subtle" />
-                      </div>
-                      
-                      {/* User Specified Points Badge */}
-                      <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs text-white font-bold mt-1">
-                        <Sparkles className="w-3.5 h-3.5 text-[#F5B942]" />
-                        <span>Your Points: <strong>{userPointsData?.user_points || 0} pts</strong></span>
-                        <span className="text-white/70 text-[10px]">({userPointsData?.user_contribution_pct || 0}% share)</span>
-                      </div>
+            {/* Identity & Verification Banner */}
+            <IdentityVerificationBanner
+              user={user}
+              onOpenKycTab={() => {
+                setProfileModalTab('kyc');
+                setProfileModalOpen(true);
+              }}
+              onOpenCreditModal={() => setCreditModalOpen(true)}
+            />
 
-                      <p className="text-xs text-white/80 font-medium pt-1">
-                        Earned by {selectedGroup?.member_count || 1} {selectedGroup?.member_count === 1 ? 'member' : 'members'}
+            {/* Two-Column Main Section (7 cols left, 5 cols right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* LEFT COLUMN: 7 cols */}
+              <div className="lg:col-span-7 space-y-6">
+                {/* Tiered Group Benefits Grid */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <div>
+                      <h2 className="text-base font-extrabold text-[#0c0a09]">Tiered Group Benefits</h2>
+                      <p className="text-xs text-[#78716c] mt-0.5">
+                        Unlocked automatically for all members once points threshold is attained.
                       </p>
                     </div>
+                    <span className="text-xs font-bold text-[#b4552d] bg-[#fff7ed] border border-[#fed7aa] px-2.5 py-1 rounded-full shrink-0">
+                      {benefits.filter(b => b.state === 'claimed' || (totalPoints >= b.benefit.required_points)).length} of {Math.max(4, benefits.length)} Unlocked
+                    </span>
+                  </div>
 
-                    {/* Right Progress Nodes & Microcopy */}
-                    <div className="md:col-span-7 space-y-4 md:border-l md:border-white/15 md:pl-8">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-white text-sm">
-                          {pointsToGo > 0 ? `${pointsToGo} points to next reward` : 'Milestone achieved! 🎉'}
-                        </span>
-                        <span className="text-white/80 font-semibold">Keep going!</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    {(benefits.length > 0 ? benefits : [
+                      {
+                        benefit: { id: 'b1', name: 'Amazon & Swiggy ₹500 Vouchers', description: 'Instant digital gift card codes issued to each member\'s registered email.', required_points: 200, display_order: 1 },
+                        state: totalPoints >= 200 ? 'available' : 'locked',
+                        claim: null,
+                      },
+                      {
+                        benefit: { id: 'b2', name: 'Co-working Day Pass & Lounge Access', description: 'One complimentary day pass per member at WeWork and partner hubs across India.', required_points: 500, display_order: 2 },
+                        state: totalPoints >= 500 ? 'available' : 'locked',
+                        claim: null,
+                      },
+                      {
+                        benefit: { id: 'b3', name: '10% Cashback on Subscriptions', description: 'Applied automatically to GitHub, AWS, Notion, and joint group billing.', required_points: 1000, display_order: 3 },
+                        state: totalPoints >= 1000 ? 'available' : 'locked',
+                        claim: null,
+                      },
+                      {
+                        benefit: { id: 'b4', name: 'Annual Team Retreat Subsidy', description: '₹25,000 company trip grant credited directly to group escrow account.', required_points: 2000, display_order: 4 },
+                        state: totalPoints >= 2000 ? 'available' : 'locked',
+                        claim: null,
+                      },
+                    ] as typeof benefits).map((bState) => {
+                      const { benefit, state } = bState;
+                      const isClaimed = state === 'claimed';
+                      const isUnlocked = isClaimed || state === 'available' || totalPoints >= benefit.required_points;
+                      const isAvailable = isUnlocked && !isClaimed;
+                      const remainingPts = Math.max(0, benefit.required_points - totalPoints);
+                      const progressPct = Math.min(100, Math.round((totalPoints / benefit.required_points) * 100));
+
+                      return (
+                        <div
+                          key={benefit.id}
+                          className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 shadow-2xs transition-all ${
+                            isClaimed
+                              ? 'border-emerald-200 bg-emerald-50/40'
+                              : isAvailable
+                              ? 'border-[#b4552d]/40 bg-[#fff7ed]/30 relative'
+                              : 'border-dashed border-[#e7e5e4] bg-[#f8fafc] opacity-90'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                isAvailable ? 'text-[#b4552d] bg-[#fff7ed] border border-[#fed7aa]' : 'text-[#78716c] bg-[#f5f5f4]'
+                              }`}>
+                                {benefit.required_points.toLocaleString()} PTS TARGET
+                              </span>
+                              {isClaimed ? (
+                                <span className="text-[#059669] font-bold text-xs flex items-center gap-0.5">
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" /> Claimed
+                                </span>
+                              ) : isAvailable ? (
+                                <span className="text-[#b4552d] font-bold text-xs flex items-center gap-0.5">
+                                  <Sparkles className="w-3.5 h-3.5" /> Unlocked
+                                </span>
+                              ) : (
+                                <span className="text-[#78716c] font-medium text-xs flex items-center gap-0.5">
+                                  <Lock className="w-3.5 h-3.5" /> Locked
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-sm font-bold text-[#0c0a09]">{benefit.name}</h4>
+                            <p className="text-xs text-[#78716c] mt-1 leading-relaxed">
+                              {benefit.description}
+                            </p>
+
+                            {!isUnlocked && (
+                              <div className="mt-3">
+                                <div className="flex justify-between text-[11px] text-[#78716c] mb-1">
+                                  <span>Progress to unlock</span>
+                                  <span className="font-bold text-[#b4552d]">
+                                    {remainingPts.toLocaleString()} pts remaining
+                                  </span>
+                                </div>
+                                <div className="w-full h-1.5 bg-[#e7e5e4] rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[#fd8d60] rounded-full transition-all duration-300"
+                                    style={{ width: `${progressPct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {isClaimed ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="w-full py-2 px-3 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center gap-1 cursor-default"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Claimed by Group
+                            </button>
+                          ) : isAvailable ? (
+                            <button
+                              type="button"
+                              onClick={() => handleClaimBenefit(bState)}
+                              className="w-full py-2 px-3 rounded-full bg-[#b4552d] hover:bg-[#9a4420] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer active:scale-98 shadow-xs"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Claim Reward</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled
+                              className="w-full py-2 px-3 rounded-full bg-[#f5f5f4] text-[#a8a29e] cursor-not-allowed text-xs font-bold text-center"
+                            >
+                              Locked (Reach {benefit.required_points.toLocaleString()} pts)
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* Collaborative Tasks & Bounties */}
+                <GroupTasksSection
+                  tasks={tasks}
+                  completedTaskIds={completedTaskIds}
+                  completingTaskId={completingTaskId}
+                  onCompleteTask={handleCompleteTask}
+                />
+              </div>
+
+              {/* RIGHT COLUMN: 5 cols */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* Own Points Balance (Personal Total with all points) */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#fff7ed] border border-[#fed7aa] text-[#b4552d] flex items-center justify-center shrink-0 shadow-2xs">
+                        <Coins className="w-4 h-4 text-[#b4552d]" />
                       </div>
+                      <div>
+                        <h2 className="text-base font-extrabold text-[#0c0a09]">Own Points Balance</h2>
+                        <p className="text-xs text-[#78716c]">All personal points & earnings</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full shadow-2xs">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      All Points
+                    </span>
+                  </div>
 
-                      {/* Progress Line with Node Markers */}
-                      <div className="relative pt-4 pb-2">
-                        <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-white rounded-full transition-all duration-500 shadow-sm"
-                            style={{ width: `${progressPercent}%` }}
-                          />
-                        </div>
-
-                        {/* Node markers */}
-                        <div className="flex justify-between items-center text-[10px] font-bold text-white/90 pt-3 relative">
-                          <div className="flex flex-col items-center">
-                            <span className="w-3.5 h-3.5 rounded-full bg-white text-[#635BFF] flex items-center justify-center text-[9px] mb-1">✓</span>
-                            <span>0</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] mb-1 ${totalPoints >= 200 ? 'bg-white text-[#635BFF]' : 'bg-white/30 text-white'}`}>
-                              {totalPoints >= 200 ? '✓' : '•'}
-                            </span>
-                            <span>200</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] mb-1 ${totalPoints >= 500 ? 'bg-white text-[#635BFF]' : 'bg-white/30 text-white'}`}>
-                              {totalPoints >= 500 ? '✓' : '•'}
-                            </span>
-                            <span>500</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] mb-1 ${totalPoints >= 1000 ? 'bg-white text-[#635BFF]' : 'bg-white/30 text-white'}`}>
-                              {totalPoints >= 1000 ? '✓' : '•'}
-                            </span>
-                            <span>1,000</span>
-                          </div>
-                        </div>
+                  {/* Summary Metric Block */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-[#fffaf5] via-white to-[#fffaf5] border border-[#fed7aa]/70 flex items-center justify-between shadow-2xs">
+                    <div>
+                      <span className="text-[11px] font-bold text-[#78716c] uppercase tracking-wider block">
+                        Total Reward Balance
+                      </span>
+                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                        <span className="text-3xl font-extrabold tracking-tight text-[#0c0a09] font-mono">
+                          {ownTotalPts.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-bold text-[#b4552d] uppercase tracking-wider">PTS</span>
+                      </div>
+                      <span className="text-[11px] text-[#78716c] block mt-0.5">
+                        Lifetime tasks + invites + benefits
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#0c0a09] text-white flex items-center justify-center shadow-xs">
+                        <Sparkles className="w-5 h-5 text-[#fed7aa]" />
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* 3-Column Grid Matching Screen 06 */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Column 1: Members (4) */}
-                <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-extrabold text-base text-[#171923]">
-                      Members ({selectedGroup?.members?.length || 0})
-                    </h2>
+                  {/* Breakdown items styled similarly to Team Roster items */}
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl border border-[#f0efed] bg-white hover:bg-[#f8fafc] flex items-center justify-between transition-colors">
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0D9488] to-[#059669] text-white flex items-center justify-center border border-white/20 shadow-xs shrink-0">
+                          <TrendingUp className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#0c0a09] text-xs">Tasks & Activities</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-[#ecfdf5] text-[#059669]">
+                              Earned
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-[#78716c] mt-0.5">
+                            {userPointsData?.user_tasks_completed || 0} tasks completed & contributions
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-bold text-sm text-[#0c0a09] font-mono">
+                          {userPts.toLocaleString()} pts
+                        </div>
+                        <div className="text-[10px] text-[#059669] font-medium">Contributed</div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-[#fed7aa]/60 bg-[#fffaf5] hover:bg-[#fff7ed]/50 flex items-center justify-between transition-colors">
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D97706] to-[#B45309] text-white flex items-center justify-center border border-white/20 shadow-xs shrink-0">
+                          <Gift className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#0c0a09] text-xs">Claimed Benefits</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-[#fff7ed] text-[#b4552d]">
+                              Perks
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-[#78716c] mt-0.5">
+                            Unlocked milestone rewards
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-bold text-sm text-[#b4552d] font-mono">
+                          +{benefitPts.toLocaleString()} pts
+                        </div>
+                        <div className="text-[10px] text-[#b4552d] font-medium">Claimed</div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Team Roster */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <div>
+                      <h2 className="text-base font-extrabold text-[#0c0a09]">Team Roster</h2>
+                      <p className="text-xs text-[#78716c]">
+                        {selectedGroup?.members?.length ?? selectedGroup?.member_count ?? 3} Active Members
+                      </p>
+                    </div>
                     <button
+                      type="button"
                       onClick={() => setMembersModalOpen(true)}
-                      className="text-xs font-semibold text-[#635BFF] hover:text-[#4F46E5] transition-colors cursor-pointer"
+                      className="text-xs font-bold text-[#b4552d] hover:underline cursor-pointer"
                     >
                       View all
                     </button>
                   </div>
 
-                  {loadingDetails ? (
-                    <Skeleton className="h-40 rounded-2xl" />
-                  ) : (
-                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1.5 border-t border-b border-[#F8F9FC] py-1">
-                      {selectedGroup?.members?.map((m) => {
+                  <div className="space-y-3 max-h-[208px] overflow-y-auto pr-1.5 custom-scrollbar">
+                    {selectedGroup?.members && selectedGroup.members.length > 0 ? (
+                      selectedGroup.members.map((m) => {
                         const isUserOwner = m.role === 'owner';
                         const isSelf = m.user.email === user?.email;
-                        const userName = m.user.name || m.user.email || 'Group Member';
-                        const initial = userName.charAt(0).toUpperCase();
-                        const userColor = getUserColor(userName);
+                        const memberName = m.user.name || m.user.email || 'Member';
+                        const initial = memberName.charAt(0).toUpperCase();
+                        const userColor = getUserColor(memberName);
+                        const mPoints = userPointsData?.member_points?.find(
+                          (mp) => mp.user_id === m.user.id || mp.member_id === m.id
+                        );
+                        const earned = mPoints ? mPoints.points_earned : 0;
+                        const sharePct = totalPoints > 0 ? Math.round((earned / totalPoints) * 100) : 0;
 
                         return (
                           <div
                             key={m.id}
-                            className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#F8F9FC] transition-colors border border-transparent hover:border-[#E7E9EE]"
+                            className={`p-3 rounded-xl border flex items-center justify-between transition-colors ${
+                              isSelf ? 'bg-[#f8fafc] border-[#e7e5e4]' : 'bg-white border-[#f0efed] hover:bg-[#f8fafc]'
+                            }`}
                           >
                             <div className="flex items-center gap-3 min-w-0 pr-2">
                               <div className="relative shrink-0">
-                                <div
-                                  className={`w-9 h-9 rounded-xl ${userColor.bg} text-white font-black text-xs flex items-center justify-center border border-white/20 shadow-xs`}
-                                >
+                                <div className={`w-10 h-10 rounded-full ${userColor.bg} text-white font-bold text-xs flex items-center justify-center border border-white/20 shadow-xs`}>
                                   {initial}
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-white border border-[#E7E9EE] flex items-center justify-center shadow-2xs">
-                                  {isUserOwner ? (
-                                    <ShieldCheck className="w-2 h-2 text-[#B45309]" />
-                                  ) : (
-                                    <User className="w-2 h-2 text-[#0070F3]" />
-                                  )}
-                                </div>
+                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10b981] border-2 border-white rounded-full"></span>
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="text-xs font-bold text-[#171923] truncate max-w-[120px]">
-                                    {userName}
-                                  </p>
-                                  {isSelf && (
-                                    <span className="text-[9px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 border border-[#635BFF]/20 px-1.5 py-0.5 rounded-md shrink-0">
-                                      You
-                                    </span>
+                                  <span className="font-bold text-[#0c0a09] text-xs truncate max-w-[130px]">
+                                    {memberName} {isSelf && '(You)'}
+                                  </span>
+                                  <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
+                                    isUserOwner ? 'bg-[#0c0a09] text-white' : 'bg-[#f5f5f4] text-[#78716c]'
+                                  }`}>
+                                    {isUserOwner ? 'Owner' : 'Member'}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-[#78716c] mt-0.5">{sharePct}% share of pool</div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="font-bold text-sm text-[#0c0a09]">{earned} pts</div>
+                              <div className="text-[10px] text-[#78716c] font-medium">{sharePct}% pool</div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-6 rounded-xl bg-[#fafafa] border border-dashed border-[#e7e5e4] text-center space-y-2">
+                        <p className="text-xs font-semibold text-[#0c0a09]">No other members yet</p>
+                        <p className="text-[11px] text-[#78716c]">Invite your peers to collaborate and earn rewards together.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMembersModalOpen(true)}
+                      className="flex-1 py-2 rounded-xl bg-[#f5f5f4] hover:bg-[#e7e5e4] text-[#0c0a09] text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Manage Permissions
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInviteModalOpen(true)}
+                      className="flex-1 py-2 rounded-xl border border-[#e7e5e4] text-[#0c0a09] hover:bg-[#f5f5f4] text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Invite New Member
+                    </button>
+                  </div>
+                </section>
+
+                {/* Recent Group Activity Stream */}
+                <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 custom-card-shadow space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#f0efed]">
+                    <h2 className="text-base font-extrabold text-[#0c0a09]">Recent Activity</h2>
+                    <button
+                      type="button"
+                      onClick={() => setActivityModalOpen(true)}
+                      className="text-xs font-bold text-[#b4552d] hover:underline cursor-pointer"
+                    >
+                      View all
+                    </button>
+                  </div>
+
+                  <div className="max-h-[290px] overflow-y-auto pr-1.5 custom-scrollbar">
+                    {activities.length > 0 ? (
+                      <div className="relative space-y-4 py-1">
+                        {/* Vertical timeline line centered with dots */}
+                        <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-[#f0efed]" />
+                        {activities.map((act) => {
+                          const actorName = String(act.member_name || act.metadata?.member_name || act.metadata?.user_name || 'Member');
+                          const timeFormatted = act.created_at
+                            ? new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : 'Recently';
+
+                          let pts = 0;
+                          if (act.metadata?.points) pts = Number(act.metadata.points);
+                          else if (act.event_type === 'group_created' || act.event_type === 'member_joined') pts = 100;
+                          else if (act.event_type === 'invite_created') pts = 25;
+
+                          return (
+                            <div key={act.id} className="relative flex items-start gap-3">
+                              <div className="relative z-10 mt-1 flex h-4 w-4 shrink-0 items-center justify-center">
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#10b981] ring-4 ring-white" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs text-[#0c0a09] leading-snug">
+                                  <span className="font-bold">{actorName}</span> triggered {act.event_type.replace(/_/g, ' ')}.
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#78716c]">
+                                  <span>{timeFormatted}</span>
+                                  {pts > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-[#059669] font-bold">+{pts} pts</span>
+                                    </>
                                   )}
                                 </div>
-                                <p className="text-[10px] text-[#667085] truncate max-w-[130px]">{m.user.email}</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {(() => {
-                                const mPoints = userPointsData?.member_points?.find(
-                                  (mp) => mp.user_id === m.user.id || mp.member_id === m.id
-                                );
-                                const earned = mPoints ? mPoints.points_earned : 0;
-                                return (
-                                  <span className="text-[10px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 border border-[#635BFF]/20 px-1.5 py-0.5 rounded-md">
-                                    +{earned} pts
-                                  </span>
-                                );
-                              })()}
-                              <span
-                                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${isUserOwner
-                                    ? 'bg-[#FEF0C7] text-[#B45309] border border-[#F5B942]/30'
-                                    : 'bg-[#F2F4F7] text-[#667085]'
-                                  }`}
-                              >
-                                {isUserOwner ? 'Owner' : 'Member'}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Column 2: Recent activity */}
-                <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-extrabold text-base text-[#171923]">Recent activity</h2>
-                    <button
-                      onClick={() => setActivityModalOpen(true)}
-                      className="text-xs font-semibold text-[#635BFF] hover:text-[#4F46E5] transition-colors cursor-pointer"
-                    >
-                      View all
-                    </button>
-                  </div>
-
-                  {loadingDetails ? (
-                    <Skeleton className="h-40 rounded-2xl" />
-                  ) : activities.length === 0 ? (
-                    <div className="text-center py-6 space-y-2">
-                      <Zap className="w-6 h-6 text-[#98A2B3] mx-auto" />
-                      <p className="text-xs text-[#98A2B3]">No activity yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1.5 border-t border-b border-[#F8F9FC] py-1">
-                      {activities.map((act) => {
-                        const actorName = String(act.member_name || act.metadata?.member_name || act.metadata?.user_name || 'Member');
-                        const initial = actorName.charAt(0).toUpperCase();
-
-                        let actionJSX: React.ReactNode;
-                        let pointsText = '+100 pts';
-
-                        if (act.event_type === 'group_created') {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> created group{' '}
-                              <span className="font-semibold text-[#635BFF]">"{String(act.metadata?.group_name || selectedGroup?.name || '')}"</span>
-                            </span>
                           );
-                          pointsText = '+100 pts';
-                        } else if (act.event_type === 'invite_created') {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> created an invite link
-                            </span>
-                          );
-                          pointsText = '+25 pts';
-                        } else if (act.event_type === 'member_joined') {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> joined the group
-                            </span>
-                          );
-                          pointsText = '+100 pts';
-                        } else if (act.event_type === 'task_completed') {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> completed task{' '}
-                              <span className="font-semibold text-[#635BFF]">"{String(act.metadata?.task_name || 'Task')}"</span>
-                            </span>
-                          );
-                          pointsText = `+${String(act.metadata?.points || 150)} pts`;
-                        } else if (act.event_type === 'profile_completed') {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> completed profile details
-                            </span>
-                          );
-                          pointsText = `+${String(act.metadata?.points || 50)} pts`;
-                        } else if (act.event_type === 'benefit_claimed') {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> claimed benefit{' '}
-                              <span className="font-semibold text-[#12B76A]">"{String(act.metadata?.benefit_name || 'Reward')}"</span>
-                            </span>
-                          );
-                          pointsText = 'Reward';
-                        } else {
-                          actionJSX = (
-                            <span>
-                              <strong className="font-extrabold text-[#171923]">{actorName}</strong> triggered {act.event_type}
-                            </span>
-                          );
-                        }
-
-                        const timeFormatted = act.created_at
-                          ? new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          : 'Recently';
-
-                        return (
-                          <div
-                            key={act.id}
-                            className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#F8F9FC] transition-colors text-xs border border-transparent hover:border-[#E7E9EE]"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 pr-2">
-                              <div className="w-8 h-8 rounded-full bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-extrabold text-xs shrink-0 border border-[#635BFF]/20">
-                                {initial}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[#171923] text-xs truncate leading-snug">{actionJSX}</p>
-                                <p className="text-[10px] text-[#98A2B3] mt-0.5">{timeFormatted}</p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-bold text-[#12B76A] bg-[#ECFDF3] border border-[#12B76A]/20 px-2 py-0.5 rounded-full shrink-0">
-                              {pointsText}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Column 3: Benefits */}
-                <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-extrabold text-base text-[#171923]">Benefits</h2>
-                    <button
-                      onClick={() => setBenefitsModalOpen(true)}
-                      className="text-xs font-semibold text-[#635BFF] hover:text-[#4F46E5] transition-colors cursor-pointer"
-                    >
-                      View all
-                    </button>
-                  </div>
-
-                  {loadingDetails ? (
-                    <Skeleton className="h-40 rounded-2xl" />
-                  ) : (
-                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1.5 border-t border-b border-[#F8F9FC] py-1">
-                      {benefits.map((bState) => {
-                        const { benefit, state } = bState;
-                        const isClaimed = state === 'claimed';
-                        const isAvailable = state === 'available';
-
-                        return (
-                          <div
-                            key={benefit.id}
-                            className="flex items-center justify-between p-3 rounded-2xl border border-[#E7E9EE] bg-white hover:border-[#635BFF]/30 transition-all"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 pr-2">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${isClaimed
-                                  ? 'bg-gradient-to-br from-[#12B76A] to-[#059669] text-white'
-                                  : isAvailable
-                                    ? 'bg-gradient-to-br from-[#635BFF] to-[#4F46E5] text-white'
-                                    : 'bg-[#F2F4F7] text-[#98A2B3]'
-                                }`}>
-                                {isClaimed ? (
-                                  <Check className="w-4 h-4 stroke-[3]" />
-                                ) : isAvailable ? (
-                                  <Gift className="w-4 h-4" />
-                                ) : (
-                                  <Lock className="w-4 h-4" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <h3 className="font-bold text-xs text-[#171923] truncate">{benefit.name}</h3>
-                                <p className="text-[10px] font-semibold text-[#635BFF]">{benefit.required_points} points</p>
-                              </div>
-                            </div>
-
-                            {/* Status Pills */}
-                            <div className="shrink-0">
-                              {isClaimed ? (
-                                <span className="text-[10px] font-extrabold text-[#12B76A] bg-[#ECFDF3] border border-[#12B76A]/30 px-2.5 py-1 rounded-full">
-                                  Claimed ✓
-                                </span>
-                              ) : isAvailable ? (
-                                <button
-                                  onClick={() => setUnlockedBenefit(bState)}
-                                  className="text-[10px] font-extrabold text-[#635BFF] bg-[#635BFF]/10 border border-[#635BFF]/30 hover:bg-[#635BFF] hover:text-white px-2.5 py-1 rounded-full transition-all cursor-pointer shadow-2xs"
-                                >
-                                  Claim
-                                </button>
-                              ) : (
-                                <span className="text-[10px] font-bold text-[#98A2B3] bg-[#F2F4F7] border border-[#E7E9EE] px-2.5 py-1 rounded-full">
-                                  Locked
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Dynamic Group Tasks Bar */}
-              <div className="bg-white border border-[#E7E9EE] rounded-3xl p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-extrabold text-base text-[#171923] flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-[#F5B942]" /> Group Actions & Tasks
-                    </h2>
-                    <p className="text-xs text-[#667085]">Complete actions together to increase group points</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {tasks.map((t) => {
-                    const isCompleted = completedTaskIds.has(t.id);
-                    return (
-                      <div
-                        key={t.id}
-                        className="bg-[#F8F9FC] border border-[#E7E9EE] rounded-2xl p-4 flex items-center justify-between gap-4"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-xs text-[#171923]">{t.name}</h3>
-                            <span className="text-[10px] font-bold text-[#635BFF] bg-[#635BFF]/10 px-2 py-0.5 rounded-full">
-                              +{t.points} pts
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#667085] mt-0.5">{t.description}</p>
-                        </div>
-                        <button
-                          onClick={() => handleCompleteTask(t)}
-                          disabled={isCompleted || completingTaskId === t.id}
-                          className={`shrink-0 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer ${isCompleted
-                              ? 'bg-[#ECFDF3] text-[#12B76A] border border-[#12B76A]/30 cursor-default'
-                              : 'bg-[#635BFF] hover:bg-[#4F46E5] text-white shadow-xs'
-                            }`}
-                        >
-                          {completingTaskId === t.id ? (
-                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : isCompleted ? (
-                            'Completed ✓'
-                          ) : (
-                            'Complete'
-                          )}
-                        </button>
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
+                    ) : (
+                      <div className="text-center py-6 bg-[#fafafa] rounded-xl border border-dashed border-[#e7e5e4] space-y-1">
+                        <p className="text-xs font-semibold text-[#0c0a09]">No recent activity yet</p>
+                        <p className="text-[11px] text-[#78716c]">Group actions and milestone rewards will be logged here.</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
               </div>
-            </>
-          )}
-        </main>
+            </div>
+          </>
+        )}
+      </main>
 
-      {/* Mobile Fixed Bottom Navigation Bar (Screen 09 Layout) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E7E9EE] px-4 py-2.5 flex items-center justify-around z-30 shadow-lg">
-        <button
-          onClick={() => navigate('/groups')}
-          className="flex flex-col items-center gap-1 text-[#635BFF] text-[10px] font-bold cursor-pointer"
-        >
-          <LayoutDashboard className="w-5 h-5" />
-          <span>Dashboard</span>
-        </button>
-        <button
-          onClick={() => showToast('Activity feed', 'info')}
-          className="flex flex-col items-center gap-1 text-[#667085] text-[10px] font-semibold cursor-pointer"
-        >
-          <Zap className="w-5 h-5" />
-          <span>Activity</span>
-        </button>
-
-        {/* Floating (+) Invite Center Button */}
-        <button
-          onClick={() => setInviteModalOpen(true)}
-          className="w-12 h-12 rounded-full bg-[#635BFF] text-white flex items-center justify-center shadow-lg -mt-6 border-4 border-white cursor-pointer"
-        >
-          <Plus className="w-6 h-6 stroke-[3]" />
-        </button>
-
-        <button
-          onClick={() => showToast('Group Rewards', 'info')}
-          className="flex flex-col items-center gap-1 text-[#667085] text-[10px] font-semibold cursor-pointer"
-        >
-          <Gift className="w-5 h-5" />
-          <span>Rewards</span>
-        </button>
-        <button
-          onClick={() => setProfileModalOpen(true)}
-          className="flex flex-col items-center gap-1 text-[#667085] text-[10px] font-semibold cursor-pointer"
-        >
-          <User className="w-5 h-5" />
-          <span>Profile</span>
-        </button>
-      </div>
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <MobileBottomNav
+        onNavigateHome={() => navigate('/groups')}
+        onOpenActivity={() => showToast('Activity feed', 'info')}
+        onOpenInvite={() => setInviteModalOpen(true)}
+        onOpenRewards={() => showToast('Group Rewards', 'info')}
+        onOpenProfile={() => setProfileModalOpen(true)}
+      />
 
       {/* Modals */}
       <CreateGroupModal
@@ -761,11 +839,20 @@ export default function GroupsDashboardPage() {
         groupId={selectedGroup?.id}
         userPointsData={userPointsData}
         activities={activities}
+        initialTab={profileModalTab}
         onSuccess={() => {
           if (selectedGroup) fetchGroupDetails(selectedGroup.id);
         }}
       />
 
+      <CreditDashboardModal
+        open={creditModalOpen}
+        onClose={() => setCreditModalOpen(false)}
+        onOpenPanVerification={() => {
+          setProfileModalTab('kyc');
+          setProfileModalOpen(true);
+        }}
+      />
 
       {selectedGroup && (
         <>
@@ -805,38 +892,40 @@ export default function GroupsDashboardPage() {
         </>
       )}
 
-      {/* Benefit Unlock Celebration Modal (Screen 10 in Visual Spec) */}
+      {/* Benefit Unlock Celebration Modal */}
       {unlockedBenefit && (
         <Modal
           open={Boolean(unlockedBenefit)}
           onClose={() => setUnlockedBenefit(null)}
           title="Reward Available!"
         >
-          <div className="space-y-5 text-center py-2">
-            <div className="w-16 h-16 rounded-2xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mx-auto">
-              <Gift className="w-9 h-9 text-[#635BFF]" />
+          <div className="space-y-5 text-center py-2 text-[#0c0a09]">
+            <div className="w-16 h-16 rounded-2xl bg-[#fff7ed] border border-[#fed7aa] flex items-center justify-center mx-auto shadow-xs">
+              <Gift className="w-9 h-9 text-[#b4552d]" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-extrabold text-[#171923]">New reward unlocked! 🎉</h3>
-              <p className="text-xs text-[#667085] max-w-xs mx-auto">
-                Your group reached <strong className="text-[#171923]">{unlockedBenefit.benefit.required_points} points</strong>. {unlockedBenefit.benefit.name} is now available.
+              <h3 className="text-xl font-bold text-[#0c0a09]">New reward unlocked! 🎉</h3>
+              <p className="text-xs text-[#78716c] max-w-xs mx-auto">
+                Your group reached <strong className="text-[#0c0a09]">{unlockedBenefit.benefit.required_points} points</strong>. {unlockedBenefit.benefit.name} is now available.
               </p>
             </div>
 
             <div className="pt-2 space-y-2">
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => handleClaimBenefit(unlockedBenefit)}
-                className="w-full bg-[#635BFF] hover:bg-[#4F46E5] text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full"
               >
                 Claim reward
-              </button>
+              </Button>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* Claim Reward Confirmation Modal (Screen 11 in Visual Spec) */}
+      {/* Claim Reward Confirmation Modal */}
       {claimedBenefit && (
         <Modal
           open={Boolean(claimedBenefit)}
@@ -856,12 +945,14 @@ export default function GroupsDashboardPage() {
             </div>
 
             <div className="pt-2">
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => setClaimedBenefit(null)}
-                className="w-full bg-[#635BFF] hover:bg-[#4F46E5] text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-sm cursor-pointer"
+                className="w-full"
               >
                 Awesome!
-              </button>
+              </Button>
             </div>
           </div>
         </Modal>
