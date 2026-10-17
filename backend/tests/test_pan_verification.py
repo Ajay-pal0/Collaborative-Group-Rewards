@@ -288,3 +288,26 @@ class PanVerificationApiEndpointsTest(TestCase):
         self.assertTrue(resp.data['pan_verified'])
         self.assertEqual(resp.data['pan_masked'], 'ABCDE****A')
         self.assertEqual(resp.data['pan_registered_name'], 'Kumar Gaurav Rathod')
+
+    def test_me_endpoint_patch_success(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch('/api/auth/me/', {'name': 'Updated Name', 'phone': '+91 9123456789'}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['name'], 'Updated Name')
+        self.assertEqual(resp.data['phone'], '+91 9123456789')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.name, 'Updated Name')
+        self.assertEqual(self.user.phone, '+91 9123456789')
+
+    def test_me_endpoint_patch_read_only_protection(self):
+        original_email = self.user.email
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch('/api/auth/me/', {'email': 'hacked@example.com', 'pan_verified': True}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, original_email)
+
+    def test_me_endpoint_unauthenticated(self):
+        self.client.force_authenticate(user=None)
+        resp = self.client.patch('/api/auth/me/', {'name': 'Anonymous'}, format='json')
+        self.assertEqual(resp.status_code, 401)

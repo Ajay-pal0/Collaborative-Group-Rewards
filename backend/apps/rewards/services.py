@@ -10,7 +10,9 @@ def build_idempotency_key(action_type, reference_id):
 
 
 def _increment_group_cached_points(group, points):
-    Group.objects.filter(id=group.id).update(cached_total_points=F('cached_total_points') + points)
+    Group.objects.filter(id=group.id).update(
+        cached_total_points=F('cached_total_points') + points
+    )
 
 
 def award_points(group, member, action_type, reference_id):
@@ -64,11 +66,16 @@ def complete_task(group, member, task):
                 idempotency_key=key,
             )
             _increment_group_cached_points(group, task.points)
+            group.refresh_from_db()
             record_activity(
                 group=group,
                 member=member,
                 event_type='task_completed',
-                metadata={'task_name': task.name, 'points': task.points},
+                metadata={
+                    'task_id': str(task.id),
+                    'task_name': task.name,
+                    'points': task.points,
+                },
             )
         return tx
     except IntegrityError:
@@ -78,11 +85,14 @@ def complete_task(group, member, task):
 def get_benefit_states(group, user=None):
     """
     Returns all active benefits with their state (locked/available/claimed)
-    relative to the group's current points and the specific user's claim history.
+    relative to the group's current points and the specific user's claim
+    history.
     """
     total = group.total_points
-    benefits = Benefit.objects.filter(status='active').order_by('required_points')
-    
+    benefits = Benefit.objects.filter(status='active').order_by(
+        'required_points'
+    )
+
     claims_query = BenefitClaim.objects.filter(group=group)
     if user and user.is_authenticated:
         claims_query = claims_query.filter(claimed_by=user)
@@ -112,8 +122,9 @@ def get_benefit_states(group, user=None):
 
 def claim_benefit(group, benefit, user):
     """
-    Claims a benefit for a specific user in a group. Validates threshold and duplicate claim
-    for that user using atomic transactions and row-level locking for concurrency safety.
+    Claims a benefit for a specific user in a group. Validates threshold
+    and duplicate claim for that user using atomic transactions and row-level
+    locking for concurrency safety.
     """
     try:
         with transaction.atomic():
@@ -121,49 +132,61 @@ def claim_benefit(group, benefit, user):
             total = locked_group.total_points
             if total < benefit.required_points:
                 raise ValueError(
-                    f'Group needs {benefit.required_points} points to unlock this benefit. '
-                    f'Current: {total}.'
+                    f'Group needs {benefit.required_points} points to unlock '
+                    f'this benefit. Current: {total}.'
                 )
 
-            if BenefitClaim.objects.filter(group=locked_group, benefit=benefit, claimed_by=user).exists():
-                return BenefitClaim.objects.get(group=locked_group, benefit=benefit, claimed_by=user)
-
-            claim = BenefitClaim.objects.create(
+            claim, claim_created = BenefitClaim.objects.get_or_create(
                 group=locked_group,
                 benefit=benefit,
                 claimed_by=user,
             )
-            membership = GroupMember.objects.filter(group=locked_group, user=user).first()
+            membership = GroupMember.objects.filter(
+                group=locked_group, user=user, status='active'
+            ).first()
+            if not membership:
+                membership = GroupMember.objects.filter(
+                    group=locked_group, user=user
+                ).first()
+
             if membership:
                 ref_id = f'{locked_group.id}:{user.id}:BENEFIT:{benefit.id}'
                 key = build_idempotency_key('BENEFIT_CLAIMED', ref_id)
-                PointTransaction.objects.get_or_create(
-                    group=locked_group,
-                    member=membership,
-                    action_type='BENEFIT_CLAIMED',
+                tx, tx_created = PointTransaction.objects.get_or_create(
+                    idempotency_key=key,
                     defaults={
+                        'group': locked_group,
+                        'member': membership,
+                        'action_type': 'BENEFIT_CLAIMED',
                         'reference_id': ref_id,
-                        'points': benefit.required_points,
-                        'idempotency_key': key,
-                    }
-                )
-                record_activity(
-                    group=locked_group,
-                    member=membership,
-                    event_type='benefit_claimed',
-                    metadata={
-                        'benefit_name': benefit.name,
                         'points': benefit.required_points,
                     },
                 )
+                if claim_created or tx_created:
+                    record_activity(
+                        group=locked_group,
+                        member=membership,
+                        event_type='benefit_claimed',
+                        metadata={
+                            'benefit_name': benefit.name,
+                            'benefit_id': str(benefit.id),
+                            'points': benefit.required_points,
+                            'user_id': str(user.id),
+                            'user_email': getattr(user, 'email', None),
+                        },
+                    )
             return claim
     except IntegrityError:
         # Already claimed concurrently by this user
-        existing = BenefitClaim.objects.get(group=group, benefit=benefit, claimed_by=user)
+        existing = BenefitClaim.objects.get(
+            group=group, benefit=benefit, claimed_by=user
+        )
         return existing
 
 
-def complete_profile(group, member, name: str | None = None, phone: str | None = None):
+def complete_profile(
+    group, member, name: str | None = None, phone: str | None = None
+):
     """
     Awards PROFILE_COMPLETED points for a member in a group.
     Idempotent by member + group context.
@@ -171,15 +194,22 @@ def complete_profile(group, member, name: str | None = None, phone: str | None =
     Optionally updates user's name and phone atomically.
     """
     if not getattr(member.user, 'pan_verified', False):
-        raise ValueError('Profile Completion Bonus can only be added once user is Verified. Please verify your PAN first.')
+        raise ValueError(
+            'Profile Completion Bonus can only be added once user is '
+            'Verified. Please verify your PAN first.'
+        )
 
     reference_id = f'{group.id}:{member.user_id}:PROFILE'
     key = build_idempotency_key('PROFILE_COMPLETED', reference_id)
 
     if PointTransaction.objects.filter(idempotency_key=key).exists():
-        raise ValueError('You have already completed your profile reward for this group.')
+        raise ValueError(
+            'You have already completed your profile reward for this group.'
+        )
 
-    rule = RewardRule.objects.filter(action_type='PROFILE_COMPLETED', is_active=True).first()
+    rule = RewardRule.objects.filter(
+        action_type='PROFILE_COMPLETED', is_active=True
+    ).first()
     points = rule.points if rule else 50
 
     with transaction.atomic():
@@ -218,5 +248,3 @@ def complete_profile(group, member, name: str | None = None, phone: str | None =
             },
         )
     return tx
-
-

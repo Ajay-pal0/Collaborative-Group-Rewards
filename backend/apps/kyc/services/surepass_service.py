@@ -322,7 +322,7 @@ class SurepassIntegrationService:
         if download_res.get('success'):
             return download_res
 
-        # 2. Fallback to status/{client_id}
+        # 2. Check status/{client_id}
         url = f'{self.base_url}/api/v1/digilocker/status/{client_id}'
         logger.info("Falling back to Surepass DigiLocker status for client_id: %s", client_id)
 
@@ -335,11 +335,22 @@ class SurepassIntegrationService:
             timeout=getattr(settings, 'SUREPASS_TIMEOUT', 15),
         )
 
-        return self._normalize_digilocker_outcome(client_id, response)
+        status_res = self._normalize_digilocker_outcome(client_id, response)
+
+        # If status indicates completed verification but XML payload was omitted from status response,
+        # retry download_aadhaar now that OAuth is finished
+        if status_res.get('success') and not status_res.get('is_pending'):
+            if not status_res.get('masked_id') or not status_res.get('full_name'):
+                retry_download = self.download_aadhaar(client_id)
+                if retry_download.get('success'):
+                    return retry_download
+
+        return status_res
 
     def _normalize_digilocker_outcome(self, client_id: str, response: ExternalApiResponse) -> dict[str, Any]:
         """
         Normalizes DigiLocker API response from either download-aadhaar or status endpoints.
+        Accurately distinguishes between pending, verified, and failed states.
         """
         # Simulated sandbox fallback
         if (response.status_code in (401, 403, 404) or not response.is_success) and (
@@ -360,12 +371,27 @@ class SurepassIntegrationService:
                 'response': response,
             }
 
+        # Check for OAuth pending from download-aadhaar (HTTP 422: "Oauth not completed yet")
+        if response.status_code == 422 and isinstance(response.data, dict):
+            msg = str(response.data.get('message') or response.data.get('error') or '')
+            if 'not completed' in msg.lower() or 'oauth' in msg.lower():
+                return {
+                    'success': False,
+                    'is_pending': True,
+                    'status': 'pending',
+                    'error': msg or 'DigiLocker verification is still in progress.',
+                    'status_code': 200,
+                    'response': response,
+                }
+
         if not response.is_success or not isinstance(response.data, dict):
             provider_err = None
             if isinstance(response.data, dict):
                 provider_err = response.data.get('message') or response.data.get('error')
             return {
                 'success': False,
+                'is_pending': False,
+                'status': 'failed',
                 'error': provider_err or 'DigiLocker document retrieval failed.',
                 'status_code': response.status_code or 400,
                 'response': response,
@@ -375,7 +401,48 @@ class SurepassIntegrationService:
         if not isinstance(data, dict):
             return {
                 'success': False,
+                'is_pending': False,
+                'status': 'failed',
                 'error': 'Invalid data received from DigiLocker provider.',
+                'status_code': 400,
+                'response': response,
+            }
+
+        # Check status flags from Surepass DigiLocker status endpoint
+        is_completed = data.get('completed')
+        is_failed = data.get('failed')
+        provider_status = str(data.get('status', '')).lower()
+        aadhaar_linked = data.get('aadhaar_linked')
+
+        # 1. Failure state
+        if is_failed is True or provider_status in ('failed', 'cancelled', 'rejected'):
+            return {
+                'success': False,
+                'is_pending': False,
+                'status': 'failed',
+                'error': data.get('error_description') or response.data.get('message') or 'DigiLocker verification failed or was cancelled.',
+                'status_code': 400,
+                'response': response,
+            }
+
+        # 2. In-progress / Pending state (e.g. status='client_initiated', completed=False)
+        if is_completed is False or provider_status in ('client_initiated', 'initiated', 'pending', 'in_progress', 'processing'):
+            return {
+                'success': False,
+                'is_pending': True,
+                'status': 'pending',
+                'error': 'DigiLocker verification is still in progress. Please complete authorization in the DigiLocker window.',
+                'status_code': 200,
+                'response': response,
+            }
+
+        # 3. Completed but Aadhaar not linked
+        if is_completed is True and aadhaar_linked is False:
+            return {
+                'success': False,
+                'is_pending': False,
+                'status': 'failed',
+                'error': 'Aadhaar is not linked in your DigiLocker account.',
                 'status_code': 400,
                 'response': response,
             }
@@ -402,7 +469,7 @@ class SurepassIntegrationService:
         if raw_aadhaar and not raw_aadhaar.startswith('X') and not raw_aadhaar.startswith('x'):
             masked_id = mask_aadhaar(raw_aadhaar)
         else:
-            masked_id = raw_aadhaar or 'XXXXXXXX9999'
+            masked_id = raw_aadhaar
 
         combined_metadata = {
             'dob': xml_data.get('dob') or digilocker_meta.get('dob') or data.get('dob', ''),
@@ -413,12 +480,35 @@ class SurepassIntegrationService:
             'xml_url': data.get('xml_url', ''),
         }
 
+        # Return verified if actual Aadhaar details are present
+        if full_name or masked_id:
+            return {
+                'success': True,
+                'provider_reference': client_id,
+                'masked_id': masked_id or 'XXXXXXXX1234',
+                'full_name': full_name or 'Verified Aadhaar Holder',
+                'metadata': combined_metadata,
+                'status_code': 200,
+                'response': response,
+            }
+
+        # If completed flag was true but XML details need download
+        if is_completed is True:
+            return {
+                'success': True,
+                'provider_reference': client_id,
+                'masked_id': '',
+                'full_name': '',
+                'metadata': combined_metadata,
+                'status_code': 200,
+                'response': response,
+            }
+
         return {
-            'success': True,
-            'provider_reference': client_id,
-            'masked_id': masked_id,
-            'full_name': full_name or 'Verified Aadhaar Holder',
-            'metadata': combined_metadata,
+            'success': False,
+            'is_pending': True,
+            'status': 'pending',
+            'error': 'DigiLocker verification is still in progress.',
             'status_code': 200,
             'response': response,
         }

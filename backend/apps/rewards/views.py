@@ -37,9 +37,15 @@ class TaskCompleteView(APIView):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_409_CONFLICT)
 
+        group.refresh_from_db()
+        user_points_summary = get_user_points_summary(
+            group, membership, request.user
+        )
+
         return Response({
             'transaction': PointTransactionSerializer(tx).data,
             'group': GroupSerializer(group, context={'request': request}).data,
+            'user_points': user_points_summary,
         })
 
 
@@ -66,7 +72,15 @@ class BenefitClaimView(APIView):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_409_CONFLICT)
 
-        return Response(BenefitClaimSerializer(claim).data, status=status.HTTP_201_CREATED)
+        membership = GroupMember.objects.filter(
+            group=group, user=request.user, status='active'
+        ).first()
+        data = BenefitClaimSerializer(claim).data
+        if membership:
+            data['user_points'] = get_user_points_summary(
+                group, membership, request.user
+            )
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class GroupPointsView(APIView):
@@ -80,9 +94,16 @@ class GroupPointsView(APIView):
         return Response({
             'total': summary['total'],
             'user_points': summary['user_points'],
+            'user_total_points': summary.get(
+                'user_total_points', summary['user_points']
+            ),
+            'benefit_points': summary.get('benefit_points', 0),
+            'task_points': summary.get('task_points', 0),
             'user_contribution_pct': summary['user_contribution_pct'],
             'member_points': summary['member_points'],
-            'transactions': PointTransactionSerializer(summary['transactions'], many=True).data,
+            'transactions': PointTransactionSerializer(
+                summary['transactions'], many=True
+            ).data,
         })
 
 
@@ -120,11 +141,17 @@ class ProfileCompleteView(APIView):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_409_CONFLICT)
 
+        group.refresh_from_db()
+        user_points_summary = get_user_points_summary(
+            group, membership, request.user
+        )
+
         user_name = request.user.name or request.user.email or 'User'
         return Response({
             'message': f'{user_name} completed profile details and earned +{tx.points} points!',
             'transaction': PointTransactionSerializer(tx).data,
             'group': GroupSerializer(group, context={'request': request}).data,
+            'user_points': user_points_summary,
             'user': UserSerializer(request.user).data,
         }, status=status.HTTP_201_CREATED)
 

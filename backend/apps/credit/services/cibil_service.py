@@ -149,11 +149,14 @@ class CibilIntegrationService:
                     'response': response,
                 }
             logger.info("Credit bureau scope unprovisioned on current token: returning PENDING_PROVIDER_ACCESS")
+            actual_error = provider_msg or response.error_message or 'Credit bureau API access is currently pending provisioning on this account.'
             return {
                 'success': True,
                 'status': 'PENDING_PROVIDER_ACCESS',
                 'is_pending_provider_access': True,
-                'message': 'Informed consent recorded. Credit bureau API access is currently pending provisioning on this account.',
+                'message': actual_error,
+                'status_message': actual_error,
+                'error': actual_error,
                 'client_id': f'cibil_pending_{clean_pan[:5]}',
                 'credit_score': None,
                 'score_band': None,
@@ -259,11 +262,14 @@ class CibilIntegrationService:
                 logger.info("Using simulated sandbox response for detailed CIBIL report.")
                 return self._build_simulated_detailed_report(clean_pan, clean_mobile, name, response)
             logger.info("Credit bureau scope unprovisioned on current token: returning PENDING_PROVIDER_ACCESS")
+            actual_error = provider_msg or response.error_message or 'Detailed credit bureau report access is currently pending provisioning on this account.'
             return {
                 'success': True,
                 'status': 'PENDING_PROVIDER_ACCESS',
                 'is_pending_provider_access': True,
-                'message': 'Informed consent recorded. Detailed credit bureau report access is currently pending provisioning on this account.',
+                'message': actual_error,
+                'status_message': actual_error,
+                'error': actual_error,
                 'client_id': f'cibil_pending_{clean_pan[:5]}',
                 'credit_score': None,
                 'score_band': None,

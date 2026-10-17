@@ -108,6 +108,8 @@ def get_user_credit_profile(user: User) -> dict[str, Any]:
         'inquiry_summary': latest_report.inquiry_summary,
         'last_report_date': latest_report.fetched_at.isoformat() if latest_report.fetched_at else None,
         'status_message': latest_report.status_message or '',
+        'message': latest_report.status_message or '',
+        'error': latest_report.status_message if latest_report.status in (CreditReportStatus.FAILED, CreditReportStatus.PENDING_PROVIDER_ACCESS) else None,
         'can_retry': latest_report.status in (CreditReportStatus.FAILED, CreditReportStatus.PENDING_PROVIDER_ACCESS),
         'pan_financial_info': pan_financial_info,
     }
@@ -273,6 +275,8 @@ def request_user_cibil_score(
                 'credit_score': None,
                 'score_band': None,
                 'message': report.status_message,
+                'status_message': report.status_message,
+                'error': result.get('error') or report.status_message,
                 'can_retry': True,
                 'status_code': 200,
             }
@@ -438,6 +442,8 @@ def request_user_detailed_cibil_report(
                 'credit_score': None,
                 'score_band': None,
                 'message': report.status_message,
+                'status_message': report.status_message,
+                'error': result.get('error') or report.status_message,
                 'can_retry': True,
                 'status_code': 200,
             }

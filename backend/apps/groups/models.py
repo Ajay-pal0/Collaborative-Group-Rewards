@@ -37,10 +37,10 @@ class Group(models.Model):
 
     @property
     def total_points(self):
-        if self.cached_total_points > 0:
-            return self.cached_total_points
         from apps.rewards.models import PointTransaction
-        result = PointTransaction.objects.filter(group=self).exclude(action_type='BENEFIT_CLAIMED').aggregate(
+        result = PointTransaction.objects.filter(
+            group=self
+        ).exclude(action_type='BENEFIT_CLAIMED').aggregate(
             total=models.Sum('points')
         )
         return result['total'] or 0

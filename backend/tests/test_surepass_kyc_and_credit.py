@@ -130,6 +130,35 @@ class KycEndpointsTest(TestCase):
         self.assertTrue(self.user.aadhaar_verified)
         self.assertEqual(self.user.aadhaar_masked, 'XXXXXXXX5678')
 
+    @patch('apps.kyc.services.surepass_service.SurepassIntegrationService.fetch_digilocker_status')
+    def test_aadhaar_verify_when_session_is_pending(self, mock_fetch):
+        IdentityVerification.objects.create(
+            user=self.user,
+            verification_type=VerificationType.AADHAAR,
+            status=VerificationStatus.PENDING,
+            provider_reference='dgl-session-pending',
+        )
+
+        mock_fetch.return_value = {
+            'success': False,
+            'is_pending': True,
+            'status': 'pending',
+            'error': 'DigiLocker verification is still in progress.',
+            'status_code': 200,
+        }
+
+        resp = self.client.post('/api/v1/kyc/aadhaar/verify/', {'client_id': 'dgl-session-pending'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.data['success'])
+        self.assertEqual(resp.data['status'], 'pending')
+        self.assertFalse(resp.data['badge']['awarded'])
+
+        # Check DB status remains PENDING and user is not verified
+        rec = IdentityVerification.objects.get(user=self.user, verification_type=VerificationType.AADHAAR)
+        self.assertEqual(rec.status, VerificationStatus.PENDING)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.aadhaar_verified)
+
     @patch('apps.kyc.services.surepass_service.SurepassIntegrationService.initiate_digilocker')
     def test_aadhaar_initialize_returns_digiboost_token(self, mock_init):
         mock_init.return_value = {

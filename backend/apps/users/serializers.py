@@ -50,7 +50,19 @@ class UserSerializer(serializers.ModelSerializer):
             'aadhaar_verified_at',
             'created_at',
         )
-
+        read_only_fields = (
+            'id',
+            'email',
+            'pan_verified',
+            'pan_masked',
+            'pan_registered_name',
+            'pan_verified_at',
+            'aadhaar_verified',
+            'aadhaar_masked',
+            'aadhaar_registered_name',
+            'aadhaar_verified_at',
+            'created_at',
+        )
 
 
 class PanVerifySerializer(serializers.Serializer):
@@ -61,7 +73,8 @@ class PanVerifySerializer(serializers.Serializer):
         clean = value.strip().upper()
         if not validate_pan_format(clean):
             raise serializers.ValidationError(
-                'Invalid PAN format. Expected format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234A).'
+                'Invalid PAN format. Expected format: 5 letters, 4 digits, '
+                '1 letter (e.g. ABCDE1234A).'
             )
         return clean
 
@@ -72,7 +85,9 @@ class CheckEmailSerializer(serializers.Serializer):
     def validate_email(self, value):
         clean = value.strip().lower()
         if not User.objects.filter(email__iexact=clean).exists():
-            raise serializers.ValidationError('No account found with this email address.')
+            raise serializers.ValidationError(
+                'No account found with this email address.'
+            )
         return clean
 
 
@@ -82,7 +97,9 @@ class ForgotPasswordSerializer(serializers.Serializer):
     def validate_email(self, value):
         clean = value.strip().lower()
         if not User.objects.filter(email__iexact=clean).exists():
-            raise serializers.ValidationError('No account found with this email address.')
+            raise serializers.ValidationError(
+                'No account found with this email address.'
+            )
         return clean
 
 
@@ -93,9 +110,29 @@ class ResetPasswordSerializer(serializers.Serializer):
 
     def validate(self, data):
         if data['new_password'] != data['confirm_password']:
-            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+            raise serializers.ValidationError(
+                {'confirm_password': 'Passwords do not match.'}
+            )
         return data
 
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(
+        write_only=True, required=True
+    )
+    new_password = serializers.CharField(
+        write_only=True, required=True, min_length=6
+    )
+    confirm_password = serializers.CharField(
+        write_only=True, required=True, min_length=6
+    )
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError(
+                {'confirm_password': 'Passwords do not match.'}
+            )
+        return data
 
 
 def get_tokens_for_user(user):

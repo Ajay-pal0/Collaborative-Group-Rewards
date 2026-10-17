@@ -157,7 +157,9 @@ def verify_user_pan(
                 },
                 'data': {
                     'masked_id': record.masked_id,
+                    'pan_masked': record.masked_id,
                     'registered_name': record.registered_name,
+                    'name': record.registered_name,
                     'verified_at': record.verified_at.isoformat() if record.verified_at else None,
                 },
                 'status_code': 200,
@@ -280,7 +282,9 @@ def verify_user_pan(
             },
             'data': {
                 'masked_id': record.masked_id,
+                'pan_masked': record.masked_id,
                 'registered_name': record.registered_name,
+                'name': record.registered_name,
                 'verified_at': record.verified_at.isoformat(),
             },
             'status_code': 200,
@@ -545,6 +549,22 @@ def confirm_user_aadhaar(
         result = surepass_service.fetch_digilocker_status(effective_client_id)
 
         if not result['success']:
+            if result.get('is_pending') or result.get('status') == 'pending':
+                # The user is still in the middle of authorizing DigiLocker in the other tab.
+                # Do not fail or complete the verification record; keep it PENDING.
+                return {
+                    'success': False,
+                    'verification_type': 'aadhaar',
+                    'status': 'pending',
+                    'badge': {
+                        'label': 'Aadhaar Verified',
+                        'awarded': False,
+                        'status': 'pending',
+                    },
+                    'message': result.get('error') or 'DigiLocker verification is still in progress. Please complete authorization in the DigiLocker window.',
+                    'status_code': 200,
+                }
+
             record.status = VerificationStatus.FAILED
             record.error_message = result.get('error', 'Aadhaar verification was not confirmed.')
             record.failure_code = str(result.get('status_code', 'FAILED'))
@@ -584,6 +604,20 @@ def confirm_user_aadhaar(
                 },
                 'error': result.get('error', 'Aadhaar verification failed.'),
                 'status_code': 400,
+            }
+
+        if not result.get('masked_id') and not result.get('full_name'):
+            return {
+                'success': False,
+                'verification_type': 'aadhaar',
+                'status': 'pending',
+                'badge': {
+                    'label': 'Aadhaar Verified',
+                    'awarded': False,
+                    'status': 'pending',
+                },
+                'message': 'Aadhaar verification is processing. Please complete the authorization.',
+                'status_code': 200,
             }
 
         record.status = VerificationStatus.VERIFIED

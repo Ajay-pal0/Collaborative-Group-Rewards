@@ -2,10 +2,9 @@ import logging
 from typing import Any
 
 from apps.common.integrations.client import ExternalApiClient
-from apps.common.security import validate_pan_format, mask_pan
 from apps.kyc.services.surepass_service import SurepassIntegrationService
 from apps.kyc.services.kyc_service import verify_user_pan as kyc_verify_pan
-from apps.users.models import User, PanVerification
+from apps.users.models import User
 
 logger = logging.getLogger('users.pan_service')
 
